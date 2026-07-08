@@ -1,0 +1,132 @@
+/* ============================================================
+   THEME TOKEN REGISTRY
+   Every component reads only these vars. Swapping <html data-theme>
+   reskins the whole app. Semantic status colours (--ok/--warn/--crit)
+   are tuned for deuteranomaly: warn pushed toward ORANGE (away from
+   yellow-green) and separated in LIGHTNESS from --ok; shape + text in
+   the components carry meaning too, so hue is never the sole channel.
+   ============================================================ */
+:root,
+:root[data-theme='glass'] {
+  --bg: #0e1512;
+  --bg-2: #131c17;
+  --surface: #17221c;
+  --surface-2: #0c1310;
+  --edge: rgba(255, 255, 255, 0.075);
+  --edge-strong: rgba(255, 255, 255, 0.14);
+  --ink: #e8f0e9;
+  --ink-soft: #94a89b;
+  --ink-faint: #62766a;
+  --accent: #79e6a6;
+  --accent-2: #e7b15c;
+  --accent-ink: #0b1a11;
+  --ok: #79e6a6;
+  --warn: #f0a23c;
+  --crit: #e5675b;
+  --info: #7fc6d8;
+  --glow: rgba(121, 230, 166, 0.16);
+  --radius: 13px;
+  --radius-sm: 8px;
+  --led-radius: 50%;
+  --f-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', serif;
+  --f-ui: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --f-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
+}
+
+:root[data-theme='instrument'] {
+  --bg: #1b1915;
+  --bg-2: #211e17;
+  --surface: #272319;
+  --surface-2: #15130e;
+  --edge: rgba(233, 225, 211, 0.13);
+  --edge-strong: rgba(233, 225, 211, 0.24);
+  --ink: #ede7d9;
+  --ink-soft: #a69f8d;
+  --ink-faint: #6e685a;
+  --accent: #e8531f;
+  --accent-2: #d8912b;
+  --accent-ink: #fdf6ee;
+  --ok: #5bb07a;
+  --warn: #e6862b;
+  --crit: #d8452a;
+  --info: #c7a46a;
+  --glow: rgba(232, 83, 31, 0.14);
+  --radius: 4px;
+  --radius-sm: 3px;
+  --led-radius: 2px;
+  --f-display: 'Segoe UI', system-ui, sans-serif;
+  --f-ui: 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
+}
+
+:root[data-theme='tank'] {
+  --bg: #070b12;
+  --bg-2: #0c1420;
+  --surface: #0f1826;
+  --surface-2: #0a111c;
+  --edge: rgba(86, 214, 222, 0.15);
+  --edge-strong: rgba(86, 214, 222, 0.3);
+  --ink: #dce7ef;
+  --ink-soft: #7c93a6;
+  --ink-faint: #556676;
+  --accent: #56d6de;
+  --accent-2: #f27e9c;
+  --accent-ink: #04141b;
+  --ok: #56d6de;
+  --warn: #f0a840;
+  --crit: #f2789a;
+  --info: #6fa8d6;
+  --glow: rgba(86, 214, 222, 0.16);
+  --radius: 13px;
+  --radius-sm: 9px;
+  --led-radius: 50%;
+  --f-display: system-ui, 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+  --f-ui: system-ui, 'Segoe UI', sans-serif;
+  --f-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  overflow: hidden;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  user-select: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+button {
+  font-family: inherit;
+}
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

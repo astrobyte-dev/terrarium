@@ -1,0 +1,15 @@
+{
+  "name": "@terrarium/tui",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "dependencies": {
+    "@terrarium/core": "*",
+    "ink": "^6.0.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.0"
+  }
+}

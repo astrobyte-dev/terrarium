@@ -1,0 +1,34 @@
+# Terrarium installer (M8b). NSIS one-click, asar-packed; tray.png ships in
+# extraResources (main resolves it via process.resourcesPath when packaged).
+appId: com.terrarium.app
+productName: Terrarium
+# electron is hoisted to the workspace root, so electron-builder can't read a
+# fixed version from packages/gui/node_modules — pin it explicitly (matches
+# the installed 33.x; bump together with the electron devDependency).
+electronVersion: 33.4.11
+directories:
+  buildResources: build
+  # Build OUTSIDE the OneDrive-synced source tree: OneDrive locks files inside
+  # dist while syncing, which makes electron-builder's rmdir of win-unpacked fail
+  # with EBUSY between rebuilds. A plain-NTFS output dir avoids that.
+  output: C:\TerrariumBuild\dist
+files:
+  - out/**
+extraResources:
+  - from: resources/tray.png
+    to: tray.png
+asar: true
+# Give the packaged app a clean, unscoped identity. The workspace package is
+# @terrarium/gui; without this the app name (and %APPDATA% userData dir) would be
+# the scoped "@terrarium/gui". "terrarium" keeps userData at %APPDATA%\terrarium.
+extraMetadata:
+  name: terrarium
+win:
+  target: nsis
+  icon: build/icon.ico
+nsis:
+  oneClick: true
+  perMachine: false
+  shortcutName: Terrarium
+# ws is pure JS (optional native addons not installed) — nothing to rebuild.
+npmRebuild: false
