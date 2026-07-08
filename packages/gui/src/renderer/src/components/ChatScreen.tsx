@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChatMsg, ChatStatus } from '../data/types'
+import { CommandMenu } from './CommandMenu'
 
 // Every bubble gets a timestamp; live `chat` events arrive with ts=null, so we
 // stamp arrival time on receipt.
@@ -48,8 +49,18 @@ export function ChatScreen({ botName }: { botName: string }) {
   const [status, setStatus] = useState<ChatStatus>({ state: 'connecting', detail: '' })
   const [draft, setDraft] = useState('')
   const [connected, setConnected] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const botInitial = botName.charAt(0).toUpperCase()
+
+  const insertCmd = (text: string) => {
+    setDraft(text)
+    inputRef.current?.focus()
+  }
+  const sendCmd = (text: string) => {
+    if (connected) void window.terrarium.chat.send(text)
+  }
 
   useEffect(() => {
     const chat = window.terrarium?.chat
@@ -153,6 +164,13 @@ export function ChatScreen({ botName }: { botName: string }) {
           sendMsg()
         }}
       >
+        <CommandMenu
+          open={menuOpen}
+          onOpenChange={setMenuOpen}
+          onInsert={insertCmd}
+          onSend={sendCmd}
+          disabled={!connected}
+        />
         <span
           className={`chat-peek ${draft.trim() !== '' ? 'up' : ''}`}
           aria-hidden="true"
@@ -161,6 +179,7 @@ export function ChatScreen({ botName }: { botName: string }) {
           {botInitial}
         </span>
         <input
+          ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           placeholder={connected ? `Message ${botName}…` : 'Connecting…'}
