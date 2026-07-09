@@ -1,7 +1,9 @@
 import { useCallback, useState } from 'react'
 import type { BotPreview, BotSpecInput, DraftFieldKey } from '../data/types'
+import { deriveSlug } from '../data/slug'
 import { Lightbox } from './Lightbox'
 import { SkinDetail } from './SkinDetail'
+import { BuilderRoster } from './BuilderRoster'
 
 interface Form {
   displayName: string
@@ -35,9 +37,27 @@ const EMPTY: Form = {
   photoShot: '',
 }
 
-const deriveSlug = (name: string) =>
-  name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24)
 const lines = (s: string) => s.split('\n').map((l) => l.trim()).filter(Boolean)
+
+// Inverse of buildSpec, for loading an existing character back into the form to edit.
+// Any skin-detail phrase composed at create time simply rides back inside Identity.
+function specToForm(spec: BotSpecInput): Form {
+  return {
+    displayName: spec.displayName,
+    age: String(spec.age),
+    look: spec.look,
+    vibe: spec.vibe,
+    loves: spec.loves,
+    relationship: spec.relationship,
+    backstory: spec.backstory,
+    speechStyle: spec.speechStyle.join('\n'),
+    openerIdeas: spec.openerIdeas.join('\n'),
+    hardRules: spec.hardRules.join('\n'),
+    photoIdentity: spec.photo.identity,
+    photoOutfit: spec.photo.outfit,
+    photoShot: spec.photo.shot,
+  }
+}
 
 // Skin-detail markers ride along in the photo Identity so both portraits and /pic
 // carry them; joined here so buildSpec stays the single source of the identity string.
@@ -76,7 +96,30 @@ export function BotBuilderScreen() {
   const [portraitNote, setPortraitNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [skin, setSkin] = useState('')
   const [zoom, setZoom] = useState<string | null>(null)
+  const [editing, setEditing] = useState<{ slug: string; heading: string } | null>(null)
+  const [rosterKey, setRosterKey] = useState(0)
   const onSkin = useCallback((phrase: string) => setSkin(phrase), [])
+
+  const startEdit = useCallback(async (slug: string, heading: string) => {
+    const r = await window.terrarium.characters.get(slug)
+    if (r.ok && r.spec) {
+      setF(specToForm(r.spec))
+      setEditing({ slug, heading })
+      setPreview(null)
+      setNote({ ok: true, text: `Editing ${r.spec.displayName} — change anything and hit Save changes. Her id stays “${slug}”.` })
+      setSelectedPortrait(null)
+      setPortraits([])
+    } else {
+      setNote({ ok: false, text: r.message ?? 'could not load that character' })
+    }
+  }, [])
+
+  const cancelEdit = () => {
+    setEditing(null)
+    setF(EMPTY)
+    setPreview(null)
+    setNote(null)
+  }
 
   const generatePortraits = async () => {
     setGenning(true)
@@ -194,8 +237,30 @@ export function BotBuilderScreen() {
         ok: true,
         text: `Created ${spec.displayName}! Saved to characters/${slug}.md + AGENTS.md (backup ${r.backupPath?.split('\\').pop()}).${faceMsg} Say /be ${slug} in chat to meet her — takes effect next message, no restart needed.`,
       })
+      setRosterKey((k) => k + 1)
     } else {
       setNote({ ok: false, text: r.errors.join(' · ') || 'could not create' })
+    }
+    setBusy(false)
+  }
+
+  const doSave = async () => {
+    if (!editing) return
+    setBusy(true)
+    let faceMsg = ''
+    if (selectedPortrait) {
+      const sr = await window.terrarium.portraits.saveRef(editing.slug, selectedPortrait)
+      faceMsg = sr.ok ? ' Her chosen face is now her reference.' : ` (couldn't save the face: ${sr.message})`
+    }
+    const r = await window.terrarium.characters.update(spec, editing.slug, editing.heading)
+    if (r.ok) {
+      setNote({ ok: true, text: `${r.message ?? 'Saved.'}${faceMsg}` })
+      setEditing(null)
+      setF(EMPTY)
+      setPreview(null)
+      setRosterKey((k) => k + 1)
+    } else {
+      setNote({ ok: false, text: r.message || r.errors.join(' · ') || 'could not save' })
     }
     setBusy(false)
   }
@@ -249,6 +314,11 @@ export function BotBuilderScreen() {
             in <code>AGENTS.md</code> (backed up first, only if it fits the 12k budget).
           </p>
           <p className="bb-guard">18+ only — the floor, no exceptions. Photo fields reject age-coded terms.</p>
+          {editing && (
+            <div className="bb-editing-banner">
+              ✎ Editing <b>{f.displayName || editing.slug}</b> — “Save changes” overwrites her card (backed up first).
+            </div>
+          )}
         </header>
 
         <div className="bb-section">Identity</div>
@@ -312,13 +382,26 @@ export function BotBuilderScreen() {
           <button className="bb-check" type="button" disabled={busy} onClick={() => void doPreview()}>
             {busy ? 'Checking…' : 'Preview / check'}
           </button>
-          <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doCreate()}>
-            Create {spec.displayName || 'companion'}
-          </button>
+          {editing && (
+            <button className="bb-check" type="button" disabled={busy} onClick={cancelEdit}>
+              Cancel edit
+            </button>
+          )}
+          {editing ? (
+            <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doSave()}>
+              Save changes
+            </button>
+          ) : (
+            <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doCreate()}>
+              Create {spec.displayName || 'companion'}
+            </button>
+          )}
         </div>
       </div>
 
       <aside className="bb-preview">
+        <BuilderRoster refreshKey={rosterKey} editingSlug={editing?.slug ?? null} onEdit={(s, h) => void startEdit(s, h)} />
+
         <div className="bb-section">Profile portrait</div>
         <div className="bb-portraits">
           <p className="bb-hint">

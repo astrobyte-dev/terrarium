@@ -7,7 +7,9 @@ import type {
   BotSpecInput,
   BrainLiveness,
   BrainsList,
+  CharGetResult,
   CharRemoveResult,
+  CharUpdateResult,
   ChatConnectResult,
   ChatMsg,
   ChatStatus,
@@ -68,6 +70,8 @@ declare global {
       characters: {
         list: () => Promise<RosterView>
         remove: (heading: string) => Promise<CharRemoveResult>
+        get: (slug: string) => Promise<CharGetResult>
+        update: (spec: BotSpecInput, originalSlug: string, originalHeading: string) => Promise<CharUpdateResult>
       }
       portraits: {
         generate: (input: PortraitGenInput) => Promise<PortraitGenResult>

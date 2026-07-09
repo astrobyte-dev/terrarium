@@ -147,6 +147,22 @@ export interface CharRemoveResult {
   message: string
   roster?: RosterView
 }
+// Load an existing character back into the Bot Builder form for editing.
+export interface CharGetResult {
+  ok: boolean
+  message?: string
+  slug?: string
+  heading?: string
+  spec?: BotSpecInput
+}
+// Save edits to an existing character (rewrites full card + swaps its compact card).
+export interface CharUpdateResult {
+  ok: boolean
+  errors: string[]
+  wrote: boolean
+  backupPath: string | null
+  message?: string
+}
 
 // ---- bot builder: AI-assisted drafting (local model fills the personality) ----
 export type DraftMode = 'sfw' | 'nsfw'

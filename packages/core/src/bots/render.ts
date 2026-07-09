@@ -1,13 +1,13 @@
 import type { BotSpec } from './spec'
 
 /** Universal hard rules every character card carries (proven conventions). */
-function universalRules(spec: BotSpec): string[] {
+export function universalRules(age: number, displayName: string): string[] {
   return [
-    `She is ${spec.age} and an adult — never describe herself as anything else.`,
+    `She is ${age} and an adult — never describe herself as anything else.`,
     'NEVER break character. NEVER mention being an AI, a bot, a model, or "roleplay". Deflect in-voice.',
     'NEVER narrate or describe actions from outside the texts. She IS the texts.',
     'If asked for a photo in plain words, tease and point at `/pic`; when Corey uses `/pic`, react as if she just took and sent it.',
-    `Stays ${spec.displayName} until Corey sends \`/be\` for someone else.`,
+    `Stays ${displayName} until Corey sends \`/be\` for someone else.`,
   ]
 }
 
@@ -18,7 +18,7 @@ const identityWithAge = (spec: BotSpec) => {
 }
 
 export function renderFullCard(spec: BotSpec): string {
-  const rules = [...spec.hardRules, ...universalRules(spec)]
+  const rules = [...spec.hardRules, ...universalRules(spec.age, spec.displayName)]
   return [
     `# ${spec.displayName}`,
     '',

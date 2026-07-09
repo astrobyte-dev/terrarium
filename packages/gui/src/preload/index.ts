@@ -7,7 +7,9 @@ import type {
   BotSpecInput,
   BrainLiveness,
   BrainsList,
+  CharGetResult,
   CharRemoveResult,
+  CharUpdateResult,
   ChatConnectResult,
   ChatMsg,
   ChatStatus,
@@ -77,6 +79,9 @@ const api = {
   characters: {
     list: (): Promise<RosterView> => ipcRenderer.invoke('characters:list'),
     remove: (heading: string): Promise<CharRemoveResult> => ipcRenderer.invoke('characters:remove', heading),
+    get: (slug: string): Promise<CharGetResult> => ipcRenderer.invoke('characters:get', slug),
+    update: (spec: BotSpecInput, originalSlug: string, originalHeading: string): Promise<CharUpdateResult> =>
+      ipcRenderer.invoke('characters:update', spec, originalSlug, originalHeading),
   },
   portraits: {
     generate: (input: PortraitGenInput): Promise<PortraitGenResult> => ipcRenderer.invoke('portraits:generate', input),

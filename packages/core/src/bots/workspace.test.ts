@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { makeFakeSystem } from '../test/fake-system'
-import { createBot } from './workspace'
+import { createBot, updateBot } from './workspace'
 import type { BotSpec } from './spec'
 
 const SPEC: BotSpec = {
@@ -78,5 +78,66 @@ describe('createBot', () => {
     const result = await createBot({ system, spec: { ...SPEC, age: 16 }, dryRun: false })
     expect(result.ok).toBe(false)
     expect(result.errors.join(' ')).toMatch(/18/)
+  })
+})
+
+describe('updateBot', () => {
+  const EXISTING = '# Rules\n\nstuff\n\n## Mimi (26)\n\nmimi\n\n## Nova (22)\n\nold nova\n'
+
+  it('swaps the compact card in place and rewrites the full card, keeping the slug', async () => {
+    const { system, files } = world(EXISTING)
+    const edited: BotSpec = { ...SPEC, vibe: 'warmer now', slug: 'ignored-slug' }
+    const r = await updateBot({
+      system,
+      spec: edited,
+      originalSlug: 'nova',
+      originalHeading: '## Nova (22)',
+      dryRun: false,
+    })
+    expect(r.ok).toBe(true)
+    expect(r.wrote).toBe(true)
+    const agents = files.get('C:\\U\\.openclaw\\workspace\\AGENTS.md')!
+    // exactly one Nova card, carrying the edit
+    expect(agents.match(/## Nova \(22\)/g)?.length).toBe(1)
+    expect(agents).toContain('warmer now')
+    expect(agents).toContain('## Mimi (26)') // other cards untouched
+    // full card written to the ORIGINAL slug's file, not a new one
+    expect(files.get('C:\\U\\.openclaw\\workspace\\characters\\nova.md')).toContain('warmer now')
+    expect(files.has('C:\\U\\.openclaw\\workspace\\characters\\ignored-slug.md')).toBe(false)
+  })
+
+  it('backs AGENTS.md up before editing', async () => {
+    const { system, files } = world(EXISTING)
+    const r = await updateBot({ system, spec: SPEC, originalSlug: 'nova', originalHeading: '## Nova (22)', dryRun: false })
+    expect(files.get(r.backupPath!)).toBe(EXISTING)
+  })
+
+  it('a rename changes the heading but still leaves exactly one card', async () => {
+    const { system, files } = world(EXISTING)
+    const r = await updateBot({
+      system,
+      spec: { ...SPEC, displayName: 'Luna', age: 25 },
+      originalSlug: 'nova',
+      originalHeading: '## Nova (22)',
+      dryRun: false,
+    })
+    expect(r.ok).toBe(true)
+    const agents = files.get('C:\\U\\.openclaw\\workspace\\AGENTS.md')!
+    expect(agents).not.toContain('## Nova (22)')
+    expect(agents).toContain('## Luna (25)')
+    expect(agents.match(/^## /gm)?.length).toBe(2) // Mimi + Luna, no orphan
+  })
+
+  it('enforces the 18+ floor on edits too', async () => {
+    const { system } = world(EXISTING)
+    const r = await updateBot({
+      system,
+      spec: { ...SPEC, age: 15 },
+      originalSlug: 'nova',
+      originalHeading: '## Nova (22)',
+      dryRun: false,
+    })
+    expect(r.ok).toBe(false)
+    expect(r.errors.join(' ')).toMatch(/18/)
   })
 })

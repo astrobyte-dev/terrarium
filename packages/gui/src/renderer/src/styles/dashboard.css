@@ -1463,6 +1463,79 @@
   opacity: 0.5;
   cursor: progress;
 }
+/* builder roster (always-present character list in the aside) */
+.bb-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.4rem;
+}
+.bb-roster-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.bb-roster-row.editing {
+  border-color: var(--accent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.bb-roster-name {
+  font: 600 0.82rem/1 var(--f-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bb-roster-age {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.bb-roster-actions,
+.bb-roster-confirm {
+  display: inline-flex;
+  gap: 0.3rem;
+  flex: none;
+}
+.bb-roster-edit,
+.bb-roster-remove,
+.bb-roster-del,
+.bb-roster-cancel {
+  border: 1px solid var(--edge-strong);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 600 0.72rem/1 var(--f-ui);
+  padding: 0.32rem 0.55rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s, background 0.14s;
+}
+.bb-roster-edit:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.bb-roster-remove:hover:not(:disabled),
+.bb-roster-del {
+  color: var(--crit);
+  border-color: color-mix(in srgb, var(--crit) 55%, var(--edge));
+}
+.bb-roster-del:hover {
+  background: color-mix(in srgb, var(--crit) 14%, transparent);
+}
+.bb-editing-banner {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--edge));
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface));
+  color: var(--ink);
+  font: 500 0.8rem/1.4 var(--f-ui);
+}
+
 /* skin & detail chips + intensity slider */
 .bb-skin {
   display: flex;
