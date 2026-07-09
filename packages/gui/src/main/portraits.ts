@@ -20,13 +20,68 @@ const NEGATIVE =
   'missing fingers, deformed, watermark, signature, text, cartoon, anime, 3d render, drawing, ' +
   'child, kid, underage, teen, loli'
 
-function buildPositive(p: PortraitGenInput): string {
+// Candidates should be DIFFERENT women who all fit the brief — not one face in three
+// poses. A batch shares conditioning + near-adjacent seeds, so faces converge; instead
+// we render each candidate separately with its own far-apart seed AND a distinct
+// face-variation phrase. These nudge face shape / features / expression only — they
+// never touch the ethnicity, age, or outfit the user specified.
+const FACE_VARIANTS = [
+  'round face, soft delicate features, gentle smile',
+  'high cheekbones, defined jawline, sultry look',
+  'oval face, full lips, warm inviting expression',
+  'heart-shaped face, big expressive eyes',
+  'slender face, subtle natural freckles, playful smile',
+  'fuller softer face, bright cheerful expression',
+  'striking angular features, intense confident gaze',
+  'girl-next-door features, relaxed natural smile',
+]
+
+const HOW_MANY = 3
+
+// Fisher–Yates on a copy — pick `n` distinct variants so the candidates differ.
+function pickVariants(n: number): string[] {
+  const pool = [...FACE_VARIANTS]
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[pool[i], pool[j]] = [pool[j]!, pool[i]!]
+  }
+  return pool.slice(0, n)
+}
+
+function buildPositive(p: PortraitGenInput, variant: string): string {
   const bits = ['score_9, score_8_up, score_7_up, photorealistic, raw photo, 1girl, solo']
   if (p.identity.trim()) bits.push(p.identity.trim())
+  bits.push(variant)
   if (p.outfit.trim()) bits.push(`wearing ${p.outfit.trim()}`)
   if (p.shot.trim()) bits.push(p.shot.trim())
   bits.push('upper body portrait, looking at viewer, detailed face, natural skin')
   return bits.join(', ')
+}
+
+// One candidate = its own job (batch 1) with a far-apart random seed. Returns the
+// saved terrarium:// URL, or null if that single render failed (others still stand).
+async function renderCandidate(input: PortraitGenInput, variant: string, idx: number): Promise<string | null> {
+  const workflow = buildTxt2ImgWorkflow({
+    checkpoint: PHOTOREAL_CHECKPOINT,
+    positive: buildPositive(input, variant),
+    negative: NEGATIVE,
+    width: 768,
+    height: 1024,
+    steps: 24,
+    cfg: 6,
+    samplerName: 'dpmpp_2m',
+    scheduler: 'karras',
+    seed: Math.floor(Math.random() * 1_000_000_000),
+    batchSize: 1,
+    filenamePrefix: 'terrarium_portrait',
+  })
+  const r = await renderImage(COMFY, workflow, { timeoutMs: 240_000 })
+  if (!r.ok || r.images.length === 0) return null
+  const bytes = await downloadComfy(r.images[0]!)
+  if (!bytes) return null
+  const name = `p_${Date.now()}_${idx}.png`
+  writeFileSync(join(PORTRAITS_DIR, name), bytes)
+  return `terrarium://portraits/${name}`
 }
 
 async function downloadComfy(img: RenderedImage): Promise<Buffer | null> {
@@ -61,32 +116,23 @@ export function setupPortraits(): void {
       return { ok: false, images: [], error: 'fill the Photo pipeline fields (Identity/Outfit/Shot) first' }
     }
     try {
-      const workflow = buildTxt2ImgWorkflow({
-        checkpoint: PHOTOREAL_CHECKPOINT,
-        positive: buildPositive(input),
-        negative: NEGATIVE,
-        width: 768,
-        height: 1024,
-        steps: 24,
-        cfg: 6,
-        samplerName: 'dpmpp_2m',
-        scheduler: 'karras',
-        seed: Math.floor(Math.random() * 1_000_000_000),
-        batchSize: 3,
-        filenamePrefix: 'terrarium_portrait',
-      })
-      const r = await renderImage(COMFY, workflow, { timeoutMs: 240_000 })
-      if (!r.ok) return { ok: false, images: [], error: `${r.message} (is ComfyUI running on 8188?)` }
+      const variants = pickVariants(HOW_MANY)
+      // Sequential (not Promise.all) so ComfyUI renders one at a time — kinder to
+      // 12 GB of VRAM, and the checkpoint stays loaded between candidates.
       const images: string[] = []
-      for (const img of r.images) {
-        const bytes = await downloadComfy(img)
-        if (!bytes) continue
-        const name = `p_${Date.now()}_${images.length}.png`
-        writeFileSync(join(PORTRAITS_DIR, name), bytes)
-        images.push(`terrarium://portraits/${name}`)
+      let lastError = ''
+      for (let i = 0; i < variants.length; i++) {
+        try {
+          const url = await renderCandidate(input, variants[i]!, images.length)
+          if (url) images.push(url)
+        } catch (e) {
+          lastError = e instanceof Error ? e.message : String(e)
+        }
       }
       prune()
-      if (images.length === 0) return { ok: false, images: [], error: 'render finished but no images came back' }
+      if (images.length === 0) {
+        return { ok: false, images: [], error: lastError || 'render finished but no images came back (is ComfyUI running on 8188?)' }
+      }
       return { ok: true, images }
     } catch (e) {
       return { ok: false, images: [], error: e instanceof Error ? e.message : String(e) }

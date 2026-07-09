@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import type { BotPreview, BotSpecInput, DraftFieldKey } from '../data/types'
+import { Lightbox } from './Lightbox'
+import { SkinDetail } from './SkinDetail'
 
 interface Form {
   displayName: string
@@ -37,7 +39,11 @@ const deriveSlug = (name: string) =>
   name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24)
 const lines = (s: string) => s.split('\n').map((l) => l.trim()).filter(Boolean)
 
-function buildSpec(f: Form): BotSpecInput {
+// Skin-detail markers ride along in the photo Identity so both portraits and /pic
+// carry them; joined here so buildSpec stays the single source of the identity string.
+const joinIdentity = (identity: string, skin: string) => [identity.trim(), skin.trim()].filter(Boolean).join(', ')
+
+function buildSpec(f: Form, skin = ''): BotSpecInput {
   return {
     slug: deriveSlug(f.displayName),
     displayName: f.displayName.trim(),
@@ -50,7 +56,7 @@ function buildSpec(f: Form): BotSpecInput {
     speechStyle: lines(f.speechStyle),
     openerIdeas: lines(f.openerIdeas),
     hardRules: lines(f.hardRules),
-    photo: { identity: f.photoIdentity.trim(), outfit: f.photoOutfit.trim(), shot: f.photoShot.trim() },
+    photo: { identity: joinIdentity(f.photoIdentity, skin), outfit: f.photoOutfit.trim(), shot: f.photoShot.trim() },
   }
 }
 
@@ -68,12 +74,15 @@ export function BotBuilderScreen() {
   const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
   const [genning, setGenning] = useState(false)
   const [portraitNote, setPortraitNote] = useState<{ ok: boolean; text: string } | null>(null)
+  const [skin, setSkin] = useState('')
+  const [zoom, setZoom] = useState<string | null>(null)
+  const onSkin = useCallback((phrase: string) => setSkin(phrase), [])
 
   const generatePortraits = async () => {
     setGenning(true)
     setPortraitNote(null)
     const r = await window.terrarium.portraits.generate({
-      identity: f.photoIdentity,
+      identity: joinIdentity(f.photoIdentity, skin),
       outfit: f.photoOutfit,
       shot: f.photoShot,
     })
@@ -162,7 +171,7 @@ export function BotBuilderScreen() {
     setPreview(null)
     setNote(null)
   }
-  const spec = buildSpec(f)
+  const spec = buildSpec(f, skin)
   const slug = spec.slug
 
   const doPreview = async () => {
@@ -294,6 +303,11 @@ export function BotBuilderScreen() {
         {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck', undefined, 'photoOutfit')}
         {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight', undefined, 'photoShot')}
 
+        <label className="bb-field">
+          <span className="bb-label">Skin & detail</span>
+          <SkinDetail onChange={onSkin} />
+        </label>
+
         <div className="bb-actions">
           <button className="bb-check" type="button" disabled={busy} onClick={() => void doPreview()}>
             {busy ? 'Checking…' : 'Preview / check'}
@@ -318,19 +332,34 @@ export function BotBuilderScreen() {
           {portraits.length > 0 && (
             <div className="bb-portrait-grid">
               {portraits.map((url) => (
-                <button
-                  key={url}
-                  type="button"
-                  className={`bb-portrait ${selectedPortrait === url ? 'sel' : ''}`}
-                  onClick={() => setSelectedPortrait(selectedPortrait === url ? null : url)}
-                  title="Use this face"
-                >
-                  <img src={url} alt="candidate portrait" loading="lazy" />
-                </button>
+                <div className="bb-portrait-wrap" key={url}>
+                  <button
+                    type="button"
+                    className="bb-portrait-zoom"
+                    title="Enlarge"
+                    aria-label="Enlarge portrait"
+                    onClick={() => setZoom(url)}
+                  >
+                    ⤢
+                  </button>
+                  <button
+                    type="button"
+                    className={`bb-portrait ${selectedPortrait === url ? 'sel' : ''}`}
+                    onClick={() => setSelectedPortrait(selectedPortrait === url ? null : url)}
+                    title="Use this face"
+                  >
+                    <img src={url} alt="candidate portrait" loading="lazy" />
+                  </button>
+                  {selectedPortrait === url && <span className="bb-selected-tag">✓ chosen</span>}
+                </div>
               ))}
             </div>
           )}
-          {selectedPortrait && <p className="bb-hint">✓ this face saves as her reference when you Create.</p>}
+          <p className="bb-hint">
+            {selectedPortrait
+              ? '✓ this face saves as her reference when you Create — hover any for ⤢ to enlarge.'
+              : 'each is a different face for the same brief — click one to choose it, ⤢ to enlarge.'}
+          </p>
         </div>
 
         <div className="bb-section">Preview</div>
@@ -368,6 +397,8 @@ export function BotBuilderScreen() {
           </>
         )}
       </aside>
+
+      <Lightbox src={zoom} alt="candidate portrait" onClose={() => setZoom(null)} />
     </div>
   )
 }

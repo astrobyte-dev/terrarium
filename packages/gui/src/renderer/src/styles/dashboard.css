@@ -1329,6 +1329,20 @@
   display: flex;
   gap: 0.6rem;
   margin-top: 1rem;
+  /* Pin to the bottom of the scrolling form so Create is always reachable, no
+     matter how far down the fields run. */
+  position: sticky;
+  bottom: 0;
+  padding: 0.85rem 0;
+  margin-bottom: -0.5rem;
+  background: linear-gradient(180deg, transparent, var(--bg) 22%);
+  z-index: 2;
+}
+.bb-actions .btn-primary {
+  margin-left: auto;
+  padding: 0.7rem 1.3rem;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 .bb-check {
   border: 1px solid var(--edge-strong);
@@ -1449,6 +1463,58 @@
   opacity: 0.5;
   cursor: progress;
 }
+/* skin & detail chips + intensity slider */
+.bb-skin {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.bb-skin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.bb-chip {
+  border: 1px solid var(--edge-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: 600 0.76rem/1 var(--f-ui);
+  padding: 0.4rem 0.65rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+}
+.bb-chip:hover {
+  border-color: var(--accent);
+  color: var(--ink);
+}
+.bb-chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.bb-skin-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.bb-skin-slider.muted {
+  opacity: 0.5;
+}
+.bb-skin-slider-head {
+  font: 500 0.76rem/1 var(--f-ui);
+  color: var(--ink-soft);
+}
+.bb-skin-slider-head b {
+  color: var(--accent);
+  text-transform: capitalize;
+}
+.bb-skin-slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 /* profile portrait generator */
 .bb-portraits {
   display: flex;
@@ -1483,6 +1549,92 @@
 .bb-portrait.sel {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.bb-portrait-wrap {
+  position: relative;
+}
+.bb-portrait-zoom {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.14s, background 0.14s;
+}
+.bb-portrait-wrap:hover .bb-portrait-zoom {
+  opacity: 1;
+}
+.bb-portrait-zoom:hover {
+  background: color-mix(in srgb, #000 75%, transparent);
+}
+.bb-selected-tag {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  z-index: 2;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: 700 0.62rem/1.4 var(--f-ui);
+}
+
+/* lightbox — full-screen image viewer */
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  background: color-mix(in srgb, #000 82%, transparent);
+  backdrop-filter: blur(3px);
+  animation: lb-fade 0.16s ease-out;
+}
+@keyframes lb-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  border-radius: var(--radius);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+.lightbox-close {
+  position: absolute;
+  top: 1.1rem;
+  right: 1.3rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.lightbox-close:hover {
+  background: color-mix(in srgb, #000 70%, transparent);
 }
 
 .bb-preview {
