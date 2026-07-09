@@ -26,6 +26,7 @@ import type {
   PortraitGenInput,
   PortraitGenResult,
   PortraitSaveResult,
+  ProactiveSettings,
   RosterView,
   ServiceView,
 } from '../shared/contract'
@@ -56,6 +57,10 @@ const api = {
     send: (text: string): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('chat:send', text),
     onMessage: (cb: (m: ChatMsg) => void) => on<ChatMsg>('chat:message', cb),
     onStatus: (cb: (s: ChatStatus) => void) => on<ChatStatus>('chat:status', cb),
+  },
+  proactive: {
+    get: (): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:get'),
+    set: (patch: Partial<ProactiveSettings>): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:set', patch),
   },
   inbox: {
     // Recent pics (persisted) to replay into a freshly-connected chat, merged by ts.

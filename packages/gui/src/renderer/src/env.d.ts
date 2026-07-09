@@ -26,6 +26,7 @@ import type {
   PortraitGenInput,
   PortraitGenResult,
   PortraitSaveResult,
+  ProactiveSettings,
   RosterView,
   ServiceView,
 } from '../../shared/contract'
@@ -49,6 +50,10 @@ declare global {
         send: (text: string) => Promise<{ ok: boolean; message?: string }>
         onMessage: (cb: (m: ChatMsg) => void) => () => void
         onStatus: (cb: (s: ChatStatus) => void) => () => void
+      }
+      proactive: {
+        get: () => Promise<ProactiveSettings>
+        set: (patch: Partial<ProactiveSettings>) => Promise<ProactiveSettings>
       }
       inbox: {
         recent: () => Promise<ChatMsg[]>

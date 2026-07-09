@@ -4,6 +4,7 @@ import { deriveSlug } from '../data/slug'
 import { CommandMenu } from './CommandMenu'
 import { Lightbox } from './Lightbox'
 import { MessageReactions } from './MessageReactions'
+import { ProactiveMenu } from './ProactiveMenu'
 
 // A stable-enough key for a message to hang a reaction / deletion on (no server IDs).
 const msgKey = (m: ChatMsg) => `${m.role}|${m.ts ?? 0}|${(m.text ?? '').slice(0, 50)}`
@@ -242,6 +243,7 @@ export function ChatScreen({
         <span className={`chat-conn ${connected ? 'on' : status.state === 'error' ? 'err' : ''}`}>
           {connLabel(status, connected, activeName)}
         </span>
+        <ProactiveMenu />
         {visible.length > 0 &&
           (clearConfirm ? (
             <span className="chat-clear-confirm">

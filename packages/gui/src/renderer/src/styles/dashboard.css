@@ -896,6 +896,103 @@
 .chat-clear-no {
   color: var(--ink-soft);
 }
+
+/* "She texts you first" — bell + popover in the chat header. */
+.pro-menu {
+  margin-left: auto;
+  position: relative;
+  align-self: center;
+  display: inline-flex;
+}
+.pro-menu + .chat-clear,
+.pro-menu + .chat-clear-confirm {
+  margin-left: 0.5rem;
+}
+.pro-bell {
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.32rem;
+  width: 1.9rem;
+  height: 1.9rem;
+}
+.pro-bell svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.pro-bell:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.pro-bell.on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--edge-strong));
+}
+.pro-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+.pro-pop {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  z-index: 41;
+  width: 17rem;
+  padding: 0.5rem 0.7rem 0.7rem;
+  background: var(--surface);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-md, 12px);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.4);
+}
+.pro-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.4rem 0.15rem;
+  font: 500 0.82rem/1.2 var(--f-ui);
+  color: var(--ink-soft);
+}
+.pro-head {
+  font-weight: 600;
+  color: var(--ink);
+  border-bottom: 1px solid var(--edge);
+  margin-bottom: 0.15rem;
+}
+.pro-head input {
+  width: 2.1rem;
+  height: 1.15rem;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.pro-body.dim {
+  opacity: 0.42;
+  pointer-events: none;
+}
+.pro-row select {
+  background: var(--surface-2, var(--surface));
+  color: var(--ink);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.35rem;
+  font: 500 0.8rem/1 var(--f-ui);
+  cursor: pointer;
+}
+.pro-hours {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.pro-dash {
+  color: var(--ink-faint);
+}
+.pro-note {
+  margin: 0.5rem 0.15rem 0;
+  font: 500 0.72rem/1.4 var(--f-ui);
+  color: var(--ink-faint);
+}
 .chat-log {
   flex: 1;
   min-height: 0;

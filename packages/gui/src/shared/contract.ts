@@ -250,6 +250,21 @@ export interface ChatStatus {
   detail: string
 }
 
+// "She texts you first" settings (idle-aware proactive messages, in-app only). Mirrors
+// @terrarium/core's ProactiveSettings; kept here so preload/renderer stay core-free.
+export interface ProactiveSettings {
+  enabled: boolean
+  /** Quiet at least this long before she'll reach out. */
+  minIdleMinutes: number
+  /** Minimum gap between two proactive messages. */
+  cooldownMinutes: number
+  /** Hard cap per local day. */
+  maxPerDay: number
+  /** Waking window [start, end) in local hours. */
+  wakingStartHour: number
+  wakingEndHour: number
+}
+
 // A single photo in a character's gallery. `character` is the /be slug/name the pic
 // daemon recorded; `image` is a terrarium://inbox/… URL.
 export interface GalleryEntry {

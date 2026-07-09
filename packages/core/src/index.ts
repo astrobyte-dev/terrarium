@@ -62,6 +62,21 @@ export { AGENTS_LIMIT, SAFETY_MARGIN, planInsert, insertCompactCard, type Insert
 export { parseRoster, removeCard, type RosterCard } from './bots/roster'
 export { createBot, updateBot, type CreateBotResult, type UpdateBotOptions } from './bots/workspace'
 export { createChatClient, MAIN_SESSION_KEY, type ChatClient, type ChatMessage, type ChatClientOptions } from './chat/client'
+export {
+  DEFAULT_PROACTIVE_SETTINGS,
+  emptyProactiveState,
+  shouldReachOut,
+  afterReachOut,
+  sentTodayFor,
+  composeNudge,
+  isProactiveNudge,
+  timeOfDay,
+  PROACTIVE_NUDGE_TAG,
+  type ProactiveSettings,
+  type ProactiveState,
+  type Now as ProactiveNow,
+  type Decision as ProactiveDecision,
+} from './proactive/decide'
 export { loadDeviceIdentity, type DeviceIdentity } from './gateway/identity'
 export { TerrariumError, type ErrorCode, type ExplainedError } from './errors/terrarium-error'
 export { explainError } from './errors/explain'
