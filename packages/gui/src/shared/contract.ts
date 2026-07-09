@@ -156,6 +156,12 @@ export interface ChatMsg {
    * with these set (text = the caption, if any). Absent/empty for text messages.
    */
   images?: string[]
+  /**
+   * The original reproducible "/pic …" command for a mirrored photo, so the chat's
+   * per-image Redo/×3 buttons can re-fire exactly this shot. Absent for /hd upscales
+   * (not reproducible) and text messages.
+   */
+  command?: string
 }
 
 export interface ChatStatus {

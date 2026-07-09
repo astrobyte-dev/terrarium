@@ -830,6 +830,26 @@
   border-bottom-left-radius: 15px;
   font-size: 0.88rem;
 }
+.pic-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.1rem;
+}
+.pic-actions button {
+  border: 1px solid var(--edge-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: 600 0.72rem/1 var(--f-ui);
+  padding: 0.34rem 0.6rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s, background 0.14s;
+}
+.pic-actions button:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--edge-strong));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
 .bubble.typing {
   display: inline-flex;
   gap: 5px;

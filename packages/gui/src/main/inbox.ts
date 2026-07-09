@@ -23,6 +23,7 @@ interface Manifest {
   caption: string
   character: string
   prompt: string | null
+  command?: string | null
   params: Record<string, unknown>
   sessionKey: string
   ts: number
@@ -33,6 +34,7 @@ const toChatMsg = (m: Manifest): ChatMsg => ({
   text: m.caption ?? '',
   ts: m.ts,
   images: m.images.map((name) => `terrarium://inbox/${name}`),
+  ...(m.command ? { command: m.command } : {}),
 })
 
 function readHistory(): ChatMsg[] {

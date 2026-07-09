@@ -97,6 +97,13 @@ export function ChatScreen({ botName }: { botName: string }) {
     void window.terrarium.chat.send(text)
   }
 
+  // Index of the most recent photo message — /hd upscales the LATEST photo, so the HD
+  // button only makes sense there. Redo/×3 re-fire a specific shot's own command.
+  let lastImageIdx = -1
+  messages.forEach((m, i) => {
+    if (m.images && m.images.length > 0) lastImageIdx = i
+  })
+
   return (
     <div className="chat">
       <div className="chat-head">
@@ -130,6 +137,25 @@ export function ChatScreen({ botName }: { botName: string }) {
                       <img key={src} className="chat-img" src={src} alt={m.text || `photo from ${botName}`} loading="lazy" />
                     ))}
                     {m.text && <div className="bubble caption">{m.text}</div>}
+                    {connected && (m.command || i === lastImageIdx) && (
+                      <div className="pic-actions">
+                        {m.command && (
+                          <>
+                            <button type="button" onClick={() => sendCmd(m.command!)}>
+                              ↻ Redo
+                            </button>
+                            <button type="button" onClick={() => sendCmd(m.command!.replace(/\s+x[2-4]\b/gi, '') + ' x3')}>
+                              ×3
+                            </button>
+                          </>
+                        )}
+                        {i === lastImageIdx && (
+                          <button type="button" onClick={() => sendCmd('/hd')}>
+                            HD
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="bubble">{m.text}</div>
