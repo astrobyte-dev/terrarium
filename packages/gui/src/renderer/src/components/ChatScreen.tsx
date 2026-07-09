@@ -3,6 +3,11 @@ import type { ChatMsg, ChatStatus } from '../data/types'
 import { deriveSlug } from '../data/slug'
 import { CommandMenu } from './CommandMenu'
 import { Lightbox } from './Lightbox'
+import { MessageReactions } from './MessageReactions'
+
+// A stable-enough key for a message to hang a reaction on (no server IDs exist).
+const msgKey = (m: ChatMsg) => `${m.role}|${m.ts ?? 0}|${(m.text ?? '').slice(0, 50)}`
+const REACTIONS_STORE = 'terrarium.reactions'
 
 function fmtTime(ts: number | null): string {
   if (!ts) return ''
@@ -102,6 +107,42 @@ export function ChatScreen({
   const stripSrc = zoomIdx != null ? allImages[zoomIdx] ?? null : null
   const zoomSrc = faceZoom ?? stripSrc // a face has no prev/next; the photo strip does
   const stripActive = faceZoom == null && zoomIdx != null
+
+  // Local message reactions (👍❤️😂…), persisted across restarts in localStorage.
+  const [reactions, setReactions] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(REACTIONS_STORE) ?? '{}') as Record<string, string>
+    } catch {
+      return {}
+    }
+  })
+  const [pickerKey, setPickerKey] = useState<string | null>(null)
+  useEffect(() => {
+    try {
+      localStorage.setItem(REACTIONS_STORE, JSON.stringify(reactions))
+    } catch {
+      /* best effort */
+    }
+  }, [reactions])
+  const react = (m: ChatMsg, i: number, emoji: string) => {
+    const key = msgKey(m)
+    const turningOn = reactions[key] !== emoji
+    setReactions((prev) => {
+      const next = { ...prev }
+      if (next[key] === emoji) delete next[key] // toggle off
+      else next[key] = emoji
+      return next
+    })
+    setPickerKey(null)
+    // A reaction to HER message is also a nudge: send it so she replies in character.
+    // Just the emoji for her latest line; emoji + a short quote for an older one.
+    if (turningOn && m.role === 'assistant' && connected) {
+      const full = (m.text ?? '').replace(/\s+/g, ' ').trim()
+      const isLast = i === messages.length - 1
+      if (isLast || !full) send(emoji)
+      else send(`${emoji} — about when you said "${full.slice(0, 80)}${full.length > 80 ? '…' : ''}"`)
+    }
+  }
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -196,6 +237,7 @@ export function ChatScreen({
           const runStart = !prev || prev.role !== m.role
           const slug = m.role === 'assistant' ? personaSlugAt(messages, i) : null
           const who = m.role === 'assistant' ? personaName(slug, names, botName) : 'You'
+          const key = msgKey(m)
           return (
             <div className={`msg-row ${m.role} ${runStart ? 'run-start' : ''}`} key={i}>
               <div className="msg-avatar" aria-hidden="true">
@@ -203,6 +245,7 @@ export function ChatScreen({
               </div>
               <div className="msg-col">
                 {runStart && <span className="msg-name">{who}</span>}
+                <div className="msg-bubble-wrap">
                 {m.images && m.images.length > 0 ? (
                   <div className="msg-media">
                     {m.images.map((src) => (
@@ -240,6 +283,13 @@ export function ChatScreen({
                 ) : (
                   <div className="bubble">{m.text}</div>
                 )}
+                  <MessageReactions
+                    reaction={reactions[key]}
+                    open={pickerKey === key}
+                    onOpen={() => setPickerKey(pickerKey === key ? null : key)}
+                    onPick={(e) => react(m, i, e)}
+                  />
+                </div>
                 <span className="msg-time">{fmtTime(m.ts)}</span>
               </div>
             </div>
@@ -301,6 +351,7 @@ export function ChatScreen({
         </button>
       </form>
 
+      {pickerKey && <div className="react-backdrop" onClick={() => setPickerKey(null)} />}
       <Lightbox
         src={zoomSrc}
         alt="chat photo"
