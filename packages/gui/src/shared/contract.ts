@@ -265,6 +265,14 @@ export interface ProactiveSettings {
   wakingEndHour: number
 }
 
+// The Memory panel view: `memories` = curated long-term memory (workspace/MEMORY.md,
+// user-owned, read by the brain); `facts` = the pic daemon's auto-extracted facts
+// (about-corey.md), shown read-only so any can be pinned up into `memories`.
+export interface MemoryView {
+  memories: string[]
+  facts: string[]
+}
+
 // A single photo in a character's gallery. `character` is the /be slug/name the pic
 // daemon recorded; `image` is a terrarium://inbox/… URL.
 export interface GalleryEntry {

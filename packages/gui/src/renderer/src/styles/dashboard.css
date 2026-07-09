@@ -898,8 +898,13 @@
 }
 
 /* "She texts you first" — bell + popover in the chat header. */
-.pro-menu {
+/* First item of the header's right-hand group carries the push. */
+.mem-open {
   margin-left: auto;
+  align-self: center;
+}
+.pro-menu {
+  margin-left: 0.4rem;
   position: relative;
   align-self: center;
   display: inline-flex;
@@ -992,6 +997,168 @@
   margin: 0.5rem 0.15rem 0;
   font: 500 0.72rem/1.4 var(--f-ui);
   color: var(--ink-faint);
+}
+/* Memory panel ("what she remembers about you"). */
+.mem-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+.mem-modal {
+  width: min(30rem, 100%);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-md, 14px);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.mem-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 1px solid var(--edge);
+}
+.mem-title {
+  font: 600 1.02rem/1 var(--f-display);
+}
+.mem-saved {
+  margin-left: auto;
+  font: 600 0.72rem/1 var(--f-ui);
+  color: var(--ok);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.mem-saved.on {
+  opacity: 1;
+}
+.mem-close {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.15rem 0.35rem;
+}
+.mem-close:hover {
+  color: var(--ink);
+}
+.mem-body {
+  padding: 0.9rem 1.1rem;
+  overflow-y: auto;
+}
+.mem-add {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.mem-add input {
+  flex: 1;
+  min-width: 0;
+  background: var(--surface-2, var(--surface));
+  color: var(--ink);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.6rem;
+  font: 500 0.88rem/1.2 var(--f-ui);
+}
+.mem-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.mem-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.6rem;
+  background: color-mix(in srgb, var(--accent-2) 8%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent-2) 18%, var(--edge));
+  border-radius: var(--radius-sm);
+  font: 500 0.88rem/1.35 var(--f-ui);
+}
+.mem-item.noticed {
+  background: transparent;
+  border-style: dashed;
+  color: var(--ink-soft);
+}
+.mem-text {
+  flex: 1;
+  cursor: text;
+  word-break: break-word;
+}
+.mem-item.noticed .mem-text {
+  cursor: default;
+}
+.mem-edit {
+  flex: 1;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.35rem 0.5rem;
+  font: 500 0.88rem/1.3 var(--f-ui);
+}
+.mem-x,
+.mem-pin {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--ink-faint);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font: 600 0.74rem/1 var(--f-ui);
+  padding: 0.25rem 0.4rem;
+}
+.mem-x:hover {
+  color: var(--crit);
+  border-color: var(--crit);
+}
+.mem-pin:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.mem-facts {
+  margin-top: 1.1rem;
+}
+.mem-facts-head {
+  display: block;
+  font: 600 0.74rem/1 var(--f-ui);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-faint);
+  margin-bottom: 0.5rem;
+}
+.mem-empty {
+  color: var(--ink-faint);
+  font: 500 0.86rem/1.4 var(--f-ui);
+  padding: 0.4rem 0.1rem;
+}
+.mem-note {
+  margin: 0;
+  padding: 0.7rem 1.1rem;
+  border-top: 1px solid var(--edge);
+  font: 500 0.72rem/1.45 var(--f-ui);
+  color: var(--ink-faint);
+}
+.mem-open svg {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+.mem-open:hover {
+  color: var(--accent);
+  border-color: var(--accent);
 }
 .chat-log {
   flex: 1;

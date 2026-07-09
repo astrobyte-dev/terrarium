@@ -15,6 +15,7 @@ import type {
   ChatStatus,
   CoreState,
   GalleryEntry,
+  MemoryView,
   DoctorReportView,
   DoctorRepairResult,
   DraftFieldKey,
@@ -61,6 +62,10 @@ const api = {
   proactive: {
     get: (): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:get'),
     set: (patch: Partial<ProactiveSettings>): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:set', patch),
+  },
+  memory: {
+    list: (): Promise<MemoryView> => ipcRenderer.invoke('memory:list'),
+    save: (memories: string[]): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('memory:save', memories),
   },
   inbox: {
     // Recent pics (persisted) to replay into a freshly-connected chat, merged by ts.

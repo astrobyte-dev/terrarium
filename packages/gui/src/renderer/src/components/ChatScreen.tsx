@@ -5,6 +5,7 @@ import { CommandMenu } from './CommandMenu'
 import { Lightbox } from './Lightbox'
 import { MessageReactions } from './MessageReactions'
 import { ProactiveMenu } from './ProactiveMenu'
+import { MemoryModal } from './MemoryModal'
 
 // A stable-enough key for a message to hang a reaction / deletion on (no server IDs).
 const msgKey = (m: ChatMsg) => `${m.role}|${m.ts ?? 0}|${(m.text ?? '').slice(0, 50)}`
@@ -108,6 +109,7 @@ export function ChatScreen({
 }) {
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [memoryOpen, setMemoryOpen] = useState(false)
   const [names, setNames] = useState<Record<string, string>>({})
   const [roster, setRoster] = useState<{ slug: string; name: string }[]>([])
   // Locally hidden messages (delete / clear). GUI-side only — the shared brain still
@@ -243,6 +245,19 @@ export function ChatScreen({
         <span className={`chat-conn ${connected ? 'on' : status.state === 'error' ? 'err' : ''}`}>
           {connLabel(status, connected, activeName)}
         </span>
+        <button
+          type="button"
+          className="chat-clear pro-bell mem-open"
+          title="What she remembers about you"
+          aria-label="Memories"
+          onClick={() => setMemoryOpen(true)}
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 4.5a3 3 0 0 0-3 3 2.6 2.6 0 0 0-1.6 4.6A2.7 2.7 0 0 0 9 17a2.5 2.5 0 0 0 5 .3" />
+            <path d="M12 4.5a3 3 0 0 1 3 3 2.6 2.6 0 0 1 1.6 4.6A2.7 2.7 0 0 1 15 17" />
+            <path d="M12 4.5V18" />
+          </svg>
+        </button>
         <ProactiveMenu />
         {visible.length > 0 &&
           (clearConfirm ? (
@@ -415,6 +430,7 @@ export function ChatScreen({
         </button>
       </form>
 
+      {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} />}
       {pickerKey && <div className="react-backdrop" onClick={() => setPickerKey(null)} />}
       <Lightbox
         src={zoomSrc}

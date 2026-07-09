@@ -77,6 +77,7 @@ export {
   type Now as ProactiveNow,
   type Decision as ProactiveDecision,
 } from './proactive/decide'
+export { parseBullets, renderMemoryDoc, addUnique } from './memory/notes'
 export { loadDeviceIdentity, type DeviceIdentity } from './gateway/identity'
 export { TerrariumError, type ErrorCode, type ExplainedError } from './errors/terrarium-error'
 export { explainError } from './errors/explain'

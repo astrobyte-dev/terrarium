@@ -7,6 +7,7 @@ import { setupChat } from './chat'
 import { setupBrains } from './brains'
 import { setupBots } from './bots'
 import { setupCharacters } from './characters'
+import { setupMemory } from './memory'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
 import { resolvePortraitImage, resolveRefImage, setupPortraits } from './portraits'
@@ -147,6 +148,7 @@ app.whenReady().then(() => {
   setupBrains() // safe in-place primary-model swap
   setupBots() // create companions (full card + AGENTS.md compact card)
   setupCharacters() // manage the roster (view sizes, remove to reclaim AGENTS.md budget)
+  setupMemory() // curated long-term memory (workspace/MEMORY.md) + auto-facts view
   setupDoctor() // read-only health check
   bootlog('setup complete')
 

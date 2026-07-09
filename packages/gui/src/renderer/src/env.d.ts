@@ -22,6 +22,7 @@ import type {
   DraftSeedInput,
   GalleryEntry,
   LogLine,
+  MemoryView,
   MetaView,
   PortraitGenInput,
   PortraitGenResult,
@@ -54,6 +55,10 @@ declare global {
       proactive: {
         get: () => Promise<ProactiveSettings>
         set: (patch: Partial<ProactiveSettings>) => Promise<ProactiveSettings>
+      }
+      memory: {
+        list: () => Promise<MemoryView>
+        save: (memories: string[]) => Promise<{ ok: boolean; message?: string }>
       }
       inbox: {
         recent: () => Promise<ChatMsg[]>
