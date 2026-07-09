@@ -25,6 +25,10 @@ spike** first:
 
 **Spike deliverable:** confirm multi-session behaviour on the gateway + decide the Telegram
 relationship, before committing the per-character epic. Small, do it before Tier 3.
+**DONE 2026-07-09 → `docs/per-character-spike.md`.** Verdict: gateway supports one session
+per character today (`agent:main:<slug>` lazily created, shared `main` agent); the **pic_daemon
+is the blocker** (one global character, delivery hardwired to `main`). Recommended split: keep
+`main` as the Telegram line, per-character GUI chats are separate non-Telegram sessions.
 
 ---
 
