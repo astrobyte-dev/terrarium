@@ -60,16 +60,24 @@ export interface ActionResult {
   message: string
 }
 
-// ---- doctor (read-only health check) ----
+// ---- doctor (health check + safe config repair) ----
 export interface DoctorCheckView {
   id: string
   title: string
   status: 'ok' | 'warn' | 'fail'
   detail: string
+  /** 'regenerate-config' when this check can be fixed by repair; null/absent otherwise. */
+  fix?: 'regenerate-config' | null
 }
 export interface DoctorReportView {
   checks: DoctorCheckView[]
   healthy: boolean
+}
+export interface DoctorRepairResult {
+  ok: boolean
+  repaired: boolean
+  changed: boolean
+  message: string
 }
 
 // ---- bot builder (create a companion → full card + AGENTS.md compact card) ----

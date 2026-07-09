@@ -12,6 +12,7 @@ import type {
   ChatStatus,
   CoreState,
   DoctorReportView,
+  DoctorRepairResult,
   DraftResult,
   DraftSeedInput,
   LogLine,
@@ -62,6 +63,7 @@ const api = {
   },
   doctor: {
     report: (): Promise<DoctorReportView> => ipcRenderer.invoke('doctor:report'),
+    repair: (): Promise<DoctorRepairResult> => ipcRenderer.invoke('doctor:repair'),
   },
 }
 

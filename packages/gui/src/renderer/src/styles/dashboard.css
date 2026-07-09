@@ -1535,6 +1535,67 @@
 .doc-note b {
   color: var(--ink);
 }
+/* ---- doctor repair (safe post-M8a) ---- */
+.doc-repair {
+  align-self: flex-start;
+  border: 1px solid var(--warn);
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+  color: var(--warn);
+  font: 600 0.82rem/1 var(--f-ui);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.14s;
+}
+.doc-repair:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--warn) 20%, var(--surface));
+}
+.doc-repair:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+.doc-confirm {
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, var(--edge));
+  background: var(--bg-2);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.doc-confirm p {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.doc-confirm code {
+  font: 500 0.85em/1 var(--f-mono);
+  color: var(--ink);
+}
+.doc-confirm b {
+  color: var(--ink);
+}
+.doc-confirm-row {
+  display: flex;
+  gap: 0.6rem;
+}
+.doc-repair-note {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+.doc-repair-note.ok {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--edge));
+}
+.doc-repair-note.err {
+  border-color: var(--crit);
+  color: var(--crit);
+}
 
 /* ---------- placeholder (non-dashboard sections, M7a) ---------- */
 .placeholder {

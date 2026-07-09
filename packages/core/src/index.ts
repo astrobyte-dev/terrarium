@@ -53,4 +53,4 @@ export { createChatClient, MAIN_SESSION_KEY, type ChatClient, type ChatMessage, 
 export { loadDeviceIdentity, type DeviceIdentity } from './gateway/identity'
 export { TerrariumError, type ErrorCode, type ExplainedError } from './errors/terrarium-error'
 export { explainError } from './errors/explain'
-export { buildDoctorReport, gatherDoctorFacts, type DoctorCheck, type DoctorReport, type CheckStatus } from './supervisor/doctor'
+export { buildDoctorReport, gatherDoctorFacts, repairConfig, type DoctorCheck, type DoctorReport, type CheckStatus } from './supervisor/doctor'

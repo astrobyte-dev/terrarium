@@ -12,6 +12,7 @@ import type {
   ChatStatus,
   CoreState,
   DoctorReportView,
+  DoctorRepairResult,
   DraftResult,
   DraftSeedInput,
   LogLine,
@@ -54,6 +55,7 @@ declare global {
       }
       doctor: {
         report: () => Promise<DoctorReportView>
+        repair: () => Promise<DoctorRepairResult>
       }
     }
   }

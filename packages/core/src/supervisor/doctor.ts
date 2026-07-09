@@ -116,6 +116,30 @@ function ownershipCheck(facts: DoctorFacts): DoctorCheck {
   }
 }
 
+/**
+ * The one safe reset: regenerate openclaw.json from the proven template (secret
+ * mode follows ownership), rotating a backup first. Since M8a this PRESERVES the
+ * user's hand-tuning (models/primary/params) — it only realigns app-owned structure
+ * and secret placement — so it no longer clobbers a tuned config. No-op if nothing
+ * differs. Callers should restart the gateway afterward to apply.
+ */
+export async function repairConfig(
+  system: SystemPort,
+  store: SecretStore,
+): Promise<{ repaired: boolean; changed: boolean; backupPath: string | null; message: string }> {
+  const mode = (await readOwnership(system)) === null ? 'inline' : 'env-refs'
+  const result = await applyConfig({ system, store, mode })
+  if (!result.changed) {
+    return { repaired: false, changed: false, backupPath: null, message: 'config already matches — nothing to repair' }
+  }
+  return {
+    repaired: true,
+    changed: true,
+    backupPath: result.backupPath,
+    message: 'config regenerated (your models/tuning preserved; backup saved) — restart the gateway to apply',
+  }
+}
+
 /** Gather the live facts the report needs. Never throws — a probe failure degrades to a fact. */
 export async function gatherDoctorFacts(system: SystemPort, store: SecretStore): Promise<DoctorFacts> {
   const owned = (await readOwnership(system)) !== null
