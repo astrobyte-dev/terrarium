@@ -1,7 +1,7 @@
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { app, BrowserWindow, ipcMain } from 'electron'
-import type { ChatMsg } from '../shared/contract'
+import type { ChatMsg, GalleryEntry } from '../shared/contract'
 
 // The pic daemon mirrors every delivered photo here: PNG(s) + a <uuid>.json manifest.
 // We poll (robust — a photo landing ≤1s late is invisible next to a 30–60s generation),
@@ -14,9 +14,14 @@ export const INBOX_DIR = join(TERRARIUM_DIR, 'inbox')
 
 // Persisted OUTSIDE the watched inbox, so the manifest scan never trips over it.
 const HISTORY_FILE = join(TERRARIUM_DIR, 'pic-history.json')
+// Per-character gallery: keeps the character tag the chat history throws away, so a
+// character's photos can be browsed later. References inbox filenames; those images are
+// spared from pruning while an entry points at them.
+const GALLERY_FILE = join(TERRARIUM_DIR, 'gallery.json')
 const POLL_MS = 1000
 const KEEP_HISTORY = 40 // pic messages replayed on reconnect (last N)
-const KEEP_IMAGES = 120 // hard cap on PNGs kept in the inbox
+const KEEP_GALLERY = 240 // gallery entries kept per install (all characters, most recent)
+const KEEP_IMAGES = 300 // hard cap on PNGs kept in the inbox (gallery-referenced spared)
 
 interface Manifest {
   images: string[]
@@ -53,10 +58,30 @@ function writeHistory(history: ChatMsg[]): void {
   }
 }
 
-/** Delete the oldest PNGs when the inbox grows past the cap (referenced-by-history spared). */
-function pruneImages(history: ChatMsg[]): void {
+function readGallery(): GalleryEntry[] {
   try {
-    const referenced = new Set(history.flatMap((m) => m.images ?? []).map((u) => u.replace('terrarium://inbox/', '')))
+    return JSON.parse(readFileSync(GALLERY_FILE, 'utf8')) as GalleryEntry[]
+  } catch {
+    return []
+  }
+}
+
+function writeGallery(gallery: GalleryEntry[]): void {
+  try {
+    writeFileSync(GALLERY_FILE, JSON.stringify(gallery.slice(-KEEP_GALLERY)))
+  } catch {
+    /* gallery is a nicety — never let it break delivery */
+  }
+}
+
+/** Delete the oldest PNGs when the inbox grows past the cap (history/gallery refs spared). */
+function pruneImages(history: ChatMsg[], gallery: GalleryEntry[]): void {
+  try {
+    const referenced = new Set(
+      [...history.flatMap((m) => m.images ?? []), ...gallery.map((g) => g.image)].map((u) =>
+        u.replace('terrarium://inbox/', ''),
+      ),
+    )
     const pngs = readdirSync(INBOX_DIR)
       .filter((f) => /\.(png|jpg|jpeg|webp)$/i.test(f))
       .map((f) => ({ f, m: statSync(join(INBOX_DIR, f)).mtimeMs }))
@@ -72,10 +97,13 @@ function pruneImages(history: ChatMsg[]): void {
 export function setupInbox(getWin: () => BrowserWindow | null): void {
   mkdirSync(INBOX_DIR, { recursive: true })
   let history = readHistory()
-  pruneImages(history)
+  let gallery = readGallery()
+  pruneImages(history, gallery)
 
   // Replay recent pics into a freshly-connected chat (merged with gateway text history by ts).
   ipcMain.handle('inbox:recent', (): ChatMsg[] => history.slice(-KEEP_HISTORY))
+  // The per-character gallery, most recent first.
+  ipcMain.handle('gallery:list', (): GalleryEntry[] => [...gallery].reverse())
 
   const tick = () => {
     let manifests: string[]
@@ -95,6 +123,17 @@ export function setupInbox(getWin: () => BrowserWindow | null): void {
         const msg = toChatMsg(manifest)
         history.push(msg)
         history = history.slice(-KEEP_HISTORY)
+        // One gallery entry per image, tagged with the character the chat log discards.
+        for (const name of manifest.images) {
+          gallery.push({
+            character: manifest.character ?? '',
+            image: `terrarium://inbox/${name}`,
+            caption: manifest.caption ?? '',
+            ts: manifest.ts,
+            ...(manifest.command ? { command: manifest.command } : {}),
+          })
+        }
+        gallery = gallery.slice(-KEEP_GALLERY)
         getWin()?.webContents.send('chat:message', msg)
       } catch {
         // Unreadable/garbage manifest — quarantine it so we don't spin on it.
@@ -113,7 +152,8 @@ export function setupInbox(getWin: () => BrowserWindow | null): void {
     }
     if (manifests.length > 0) {
       writeHistory(history)
-      pruneImages(history)
+      writeGallery(gallery)
+      pruneImages(history, gallery)
     }
   }
 

@@ -21,6 +21,14 @@ export function App() {
   const [section, setSection] = useState<SectionId>('dashboard')
   const unread = useUnread(chat.messages, section === 'chat')
   const [toast, setToast] = useState<ToastMsg | null>(null)
+  const [editTarget, setEditTarget] = useState<{ slug: string; heading: string } | null>(null)
+  const [editNonce, setEditNonce] = useState(0)
+
+  const goEditCharacter = useCallback((slug: string, heading: string) => {
+    setEditTarget({ slug, heading })
+    setEditNonce((n) => n + 1)
+    setSection('bots')
+  }, [])
 
   const onAction = useCallback(
     async (req: ActionRequest) => {
@@ -50,9 +58,9 @@ export function App() {
           ) : section === 'brains' ? (
             <BrainsScreen />
           ) : section === 'bots' ? (
-            <BotBuilderScreen />
+            <BotBuilderScreen editTarget={editTarget} editNonce={editNonce} />
           ) : section === 'characters' ? (
-            <CharactersScreen />
+            <CharactersScreen onEdit={goEditCharacter} />
           ) : section === 'doctor' ? (
             <DoctorScreen />
           ) : (

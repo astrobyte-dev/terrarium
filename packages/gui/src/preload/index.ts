@@ -14,6 +14,7 @@ import type {
   ChatMsg,
   ChatStatus,
   CoreState,
+  GalleryEntry,
   DoctorReportView,
   DoctorRepairResult,
   DraftFieldKey,
@@ -59,6 +60,9 @@ const api = {
   inbox: {
     // Recent pics (persisted) to replay into a freshly-connected chat, merged by ts.
     recent: (): Promise<ChatMsg[]> => ipcRenderer.invoke('inbox:recent'),
+  },
+  gallery: {
+    list: (): Promise<GalleryEntry[]> => ipcRenderer.invoke('gallery:list'),
   },
   brains: {
     list: (): Promise<BrainsList> => ipcRenderer.invoke('brains:list'),

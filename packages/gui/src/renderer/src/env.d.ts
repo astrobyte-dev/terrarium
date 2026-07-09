@@ -20,6 +20,7 @@ import type {
   DraftFieldResult,
   DraftResult,
   DraftSeedInput,
+  GalleryEntry,
   LogLine,
   MetaView,
   PortraitGenInput,
@@ -51,6 +52,9 @@ declare global {
       }
       inbox: {
         recent: () => Promise<ChatMsg[]>
+      }
+      gallery: {
+        list: () => Promise<GalleryEntry[]>
       }
       brains: {
         list: () => Promise<BrainsList>

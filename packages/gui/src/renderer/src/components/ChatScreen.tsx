@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ChatMsg, ChatStatus } from '../data/types'
+import { deriveSlug } from '../data/slug'
 import { CommandMenu } from './CommandMenu'
+import { Lightbox } from './Lightbox'
 
 function fmtTime(ts: number | null): string {
   if (!ts) return ''
@@ -9,10 +11,38 @@ function fmtTime(ts: number | null): string {
   return `${p(d.getHours())}:${p(d.getMinutes())}`
 }
 
-function connLabel(status: ChatStatus, connected: boolean): string {
+function connLabel(status: ChatStatus, connected: boolean, name: string): string {
   if (status.state === 'error') return status.detail || 'connection error'
   if (!connected) return 'connecting…'
-  return 'shares Ella’s Telegram brain & memory'
+  return `talking to ${name} — same brain & memory as Telegram`
+}
+
+// One brain, many personas: `/be <slug>` switches who's replying. The GUI can't see
+// OpenClaw's active persona directly, so we infer it from the last `/be` in the log.
+const BE_RE = /^\/be\s+([a-z0-9][a-z0-9-]*)/i
+function lastPersonaSlug(messages: ChatMsg[]): string | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i]!
+    if (m.role !== 'user') continue
+    const hit = BE_RE.exec(m.text.trim())
+    if (hit) return hit[1]!.toLowerCase()
+  }
+  return null
+}
+const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+
+/** Who was replying at message `idx` — the persona from the most recent prior /be. */
+function personaAt(messages: ChatMsg[], idx: number, names: Record<string, string>, fallback: string): string {
+  for (let i = idx; i >= 0; i--) {
+    const m = messages[i]!
+    if (m.role !== 'user') continue
+    const hit = BE_RE.exec(m.text.trim())
+    if (hit) {
+      const slug = hit[1]!.toLowerCase()
+      return names[slug] ?? titleCase(slug)
+    }
+  }
+  return fallback
 }
 
 const UserGlyph = () => (
@@ -37,9 +67,32 @@ export function ChatScreen({
 }) {
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [names, setNames] = useState<Record<string, string>>({})
+  const [zoom, setZoom] = useState<string | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const botInitial = botName.charAt(0).toUpperCase()
+
+  // Resolve the active persona: slug from the last /be, display name from the roster.
+  const activeSlug = lastPersonaSlug(messages)
+  const activeName = activeSlug ? names[activeSlug] ?? titleCase(activeSlug) : botName
+  const botInitial = activeName.charAt(0).toUpperCase()
+
+  // Load the roster once so a /be slug can show its proper display name.
+  useEffect(() => {
+    let alive = true
+    window.terrarium?.characters
+      ?.list()
+      .then((r) => {
+        if (!alive) return
+        const map: Record<string, string> = {}
+        for (const c of r.cards) map[deriveSlug(c.name)] = c.name
+        setNames(map)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const insertCmd = (text: string) => {
     setDraft(text)
@@ -68,9 +121,9 @@ export function ChatScreen({
   return (
     <div className="chat">
       <div className="chat-head">
-        <span className="chat-title">Chat with {botName}</span>
+        <span className="chat-title">Chat with {activeName}</span>
         <span className={`chat-conn ${connected ? 'on' : status.state === 'error' ? 'err' : ''}`}>
-          {connLabel(status, connected)}
+          {connLabel(status, connected, activeName)}
         </span>
       </div>
 
@@ -85,17 +138,26 @@ export function ChatScreen({
         {messages.map((m, i) => {
           const prev = messages[i - 1]
           const runStart = !prev || prev.role !== m.role
+          const who = m.role === 'assistant' ? personaAt(messages, i, names, botName) : 'You'
           return (
             <div className={`msg-row ${m.role} ${runStart ? 'run-start' : ''}`} key={i}>
               <div className="msg-avatar" aria-hidden="true">
-                {m.role === 'assistant' ? botInitial : <UserGlyph />}
+                {m.role === 'assistant' ? who.charAt(0).toUpperCase() : <UserGlyph />}
               </div>
               <div className="msg-col">
-                {runStart && <span className="msg-name">{m.role === 'assistant' ? botName : 'You'}</span>}
+                {runStart && <span className="msg-name">{who}</span>}
                 {m.images && m.images.length > 0 ? (
                   <div className="msg-media">
                     {m.images.map((src) => (
-                      <img key={src} className="chat-img" src={src} alt={m.text || `photo from ${botName}`} loading="lazy" />
+                      <img
+                        key={src}
+                        className="chat-img"
+                        src={src}
+                        alt={m.text || `photo from ${who}`}
+                        loading="lazy"
+                        onClick={() => setZoom(src)}
+                        title="Click to enlarge"
+                      />
                     ))}
                     {m.text && <div className="bubble caption">{m.text}</div>}
                     {connected && (m.command || i === lastImageIdx) && (
@@ -128,7 +190,7 @@ export function ChatScreen({
         })}
 
         {status.state === 'sending' && (
-          <div className="msg-row assistant run-start" aria-label={`${botName} is typing`}>
+          <div className="msg-row assistant run-start" aria-label={`${activeName} is typing`}>
             <div className="msg-avatar" aria-hidden="true">
               {botInitial}
             </div>
@@ -161,7 +223,7 @@ export function ChatScreen({
         <span
           className={`chat-peek ${draft.trim() !== '' ? 'up' : ''}`}
           aria-hidden="true"
-          title={`${botName} is watching`}
+          title={`${activeName} is watching`}
         >
           {botInitial}
         </span>
@@ -169,7 +231,7 @@ export function ChatScreen({
           ref={inputRef}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={connected ? `Message ${botName}…` : 'Connecting…'}
+          placeholder={connected ? `Message ${activeName}…` : 'Connecting…'}
           disabled={!connected}
           aria-label="Message"
         />
@@ -177,6 +239,8 @@ export function ChatScreen({
           Send
         </button>
       </form>
+
+      <Lightbox src={zoom} alt="chat photo" onClose={() => setZoom(null)} />
     </div>
   )
 }

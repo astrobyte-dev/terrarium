@@ -349,7 +349,9 @@
   border: none;
   cursor: pointer;
   color: var(--accent-ink);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 118%, #fff), var(--accent));
+  /* NB: keep color-mix percentages <= 100% — Chromium drops the whole background on
+     an out-of-range value, which left this button transparent (dark, no text). */
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, #fff), var(--accent));
   font: 600 0.84rem/1 var(--f-ui);
   padding: 0.64rem 0.95rem;
   border-radius: var(--radius-sm);
@@ -878,6 +880,11 @@
   border-radius: 14px;
   border: 1px solid var(--edge-strong);
   background: var(--surface-2);
+  cursor: zoom-in;
+  transition: filter 0.14s;
+}
+.chat-img:hover {
+  filter: brightness(1.06);
 }
 .msg-row.assistant .msg-media .bubble.caption {
   border-bottom-left-radius: 15px;
@@ -1663,6 +1670,90 @@
   font: 700 0.62rem/1.4 var(--f-ui);
 }
 
+/* character gallery modal */
+.gallery {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem;
+  background: color-mix(in srgb, #000 68%, transparent);
+  backdrop-filter: blur(3px);
+  animation: lb-fade 0.16s ease-out;
+}
+.gallery-panel {
+  width: min(920px, 100%);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-2);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+.gallery-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--edge);
+}
+.gallery-title {
+  font: 300 1.35rem/1 var(--f-display);
+  color: var(--ink);
+}
+.gallery-close {
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--edge-strong);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.gallery-close:hover {
+  color: var(--ink);
+  border-color: var(--accent);
+}
+.gallery-empty {
+  padding: 2.5rem 1.4rem;
+  text-align: center;
+  color: var(--ink-faint);
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 0.6rem;
+  padding: 1.1rem;
+  overflow-y: auto;
+}
+.gallery-thumb {
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: zoom-in;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  transition: border-color 0.14s, transform 0.14s;
+}
+.gallery-thumb:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+.gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 /* lightbox — full-screen image viewer */
 .lightbox {
   position: fixed;
@@ -2054,6 +2145,11 @@
   font: 500 0.72rem/1 var(--f-mono);
   color: var(--ink-faint);
 }
+.chars-actions {
+  display: inline-flex;
+  gap: 0.4rem;
+}
+.chars-edit,
 .chars-remove,
 .chars-cancel {
   border: 1px solid var(--edge-strong);
@@ -2063,6 +2159,14 @@
   padding: 0.45rem 0.8rem;
   border-radius: var(--radius-sm);
   cursor: pointer;
+}
+.chars-edit:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.chars-edit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .chars-remove:hover:not(:disabled) {
   color: var(--crit);

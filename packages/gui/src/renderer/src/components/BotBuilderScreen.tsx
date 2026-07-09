@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import type { BotPreview, BotSpecInput, DraftFieldKey } from '../data/types'
 import { deriveSlug } from '../data/slug'
 import { Lightbox } from './Lightbox'
@@ -81,7 +81,13 @@ function buildSpec(f: Form, photoExtra = ''): BotSpecInput {
   }
 }
 
-export function BotBuilderScreen() {
+export function BotBuilderScreen({
+  editTarget,
+  editNonce,
+}: {
+  editTarget?: { slug: string; heading: string } | null
+  editNonce?: number
+} = {}) {
   const [f, setF] = useState<Form>(EMPTY)
   const [preview, setPreview] = useState<BotPreview | null>(null)
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
@@ -124,6 +130,13 @@ export function BotBuilderScreen() {
     setPreview(null)
     setNote(null)
   }
+
+  // Edit requested from another screen (Characters → Edit): load that character in.
+  useEffect(() => {
+    if (editTarget) void startEdit(editTarget.slug, editTarget.heading)
+    // startEdit is stable; re-run only when a new edit is requested.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editNonce])
 
   const generatePortraits = async () => {
     setGenning(true)

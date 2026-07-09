@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { RosterCardView, RosterView } from '../data/types'
+import { deriveSlug } from '../data/slug'
+import { GalleryModal } from './GalleryModal'
 
 // The shared AGENTS.md character roster. OpenClaw hard-truncates that file at ~12k
 // chars, so this view shows who's using the budget and lets you remove cards to make
 // room for new companions. Removal backs up AGENTS.md first and takes effect next turn.
-export function CharactersScreen() {
+export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: string) => void }) {
   const [roster, setRoster] = useState<RosterView | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
+  const [gallery, setGallery] = useState<{ slug: string; name: string } | null>(null)
 
   const load = useCallback(async () => {
     const c = window.terrarium?.characters
@@ -86,9 +89,27 @@ export function CharactersScreen() {
                 </button>
               </div>
             ) : (
-              <button className="chars-remove" type="button" disabled={busy} onClick={() => setConfirming(c.heading)}>
-                Remove
-              </button>
+              <span className="chars-actions">
+                <button
+                  className="chars-edit"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setGallery({ slug: deriveSlug(c.name), name: c.name })}
+                >
+                  Gallery
+                </button>
+                <button
+                  className="chars-edit"
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onEdit(deriveSlug(c.name), c.heading)}
+                >
+                  Edit
+                </button>
+                <button className="chars-remove" type="button" disabled={busy} onClick={() => setConfirming(c.heading)}>
+                  Remove
+                </button>
+              </span>
             )}
           </div>
         ))}
@@ -99,6 +120,8 @@ export function CharactersScreen() {
         Removing a card frees its budget and drops the persona from <code>/be</code> — it backs up AGENTS.md first and
         takes effect on the next message. The character's full card file stays on disk (it doesn't count toward the budget).
       </p>
+
+      {gallery && <GalleryModal slug={gallery.slug} name={gallery.name} onClose={() => setGallery(null)} />}
     </div>
   )
 }

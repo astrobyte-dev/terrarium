@@ -244,6 +244,16 @@ export interface ChatStatus {
   detail: string
 }
 
+// A single photo in a character's gallery. `character` is the /be slug/name the pic
+// daemon recorded; `image` is a terrarium://inbox/… URL.
+export interface GalleryEntry {
+  character: string
+  image: string
+  caption: string
+  command?: string
+  ts: number
+}
+
 export interface ChatConnectResult {
   ok: boolean
   message?: string
