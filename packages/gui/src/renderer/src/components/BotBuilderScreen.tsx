@@ -127,11 +127,13 @@ export function BotBuilderScreen() {
   }
   const doCreate = async () => {
     setBusy(true)
+    // createBot validates (18+, age-coded, AGENTS.md fit) before writing, so Create
+    // doesn't need a manual Preview first — it reports errors here if anything's off.
     const r = await window.terrarium.bots.create(spec)
     if (r.ok && r.wrote) {
       setNote({
         ok: true,
-        text: `Created ${spec.displayName}! Card written (backup ${r.backupPath?.split('\\').pop()}). Restart the gateway, then /be ${slug} to meet her.`,
+        text: `Created ${spec.displayName}! Saved to characters/${slug}.md + AGENTS.md (backup ${r.backupPath?.split('\\').pop()}). Say /be ${slug} in chat to meet her — takes effect on the next message, no restart needed.`,
       })
     } else {
       setNote({ ok: false, text: r.errors.join(' · ') || 'could not create' })
@@ -139,7 +141,8 @@ export function BotBuilderScreen() {
     setBusy(false)
   }
 
-  const canCreate = preview?.ok === true && preview.fits && !busy
+  // Create is available whenever there's a name; createBot does the real validation.
+  const canCreate = spec.displayName.trim() !== '' && !busy
   const pct = preview ? Math.min(100, Math.round((preview.resultChars / 11800) * 100)) : 0
 
   const T = (label: string, k: keyof Form, ph: string, hint?: string) => (
