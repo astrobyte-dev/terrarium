@@ -45,6 +45,10 @@ export function App() {
       <div className="body">
         <NavRail active={section} onSelect={setSection} owner={meta.owner} onAction={onAction} unread={unread} />
         <main className="main">
+          {/* Kept mounted (just hidden) so its half-filled form survives navigating away. */}
+          <div className={`screen-keep ${section === 'bots' ? '' : 'hidden'}`}>
+            <BotBuilderScreen editTarget={editTarget} editNonce={editNonce} />
+          </div>
           {section === 'dashboard' ? (
             <Dashboard meta={meta} services={services} logs={logs} connected={connected} onAction={onAction} />
           ) : section === 'chat' ? (
@@ -57,13 +61,11 @@ export function App() {
             />
           ) : section === 'brains' ? (
             <BrainsScreen />
-          ) : section === 'bots' ? (
-            <BotBuilderScreen editTarget={editTarget} editNonce={editNonce} />
           ) : section === 'characters' ? (
             <CharactersScreen onEdit={goEditCharacter} />
           ) : section === 'doctor' ? (
             <DoctorScreen />
-          ) : (
+          ) : section === 'bots' ? null : (
             <Placeholder section={section} />
           )}
         </main>

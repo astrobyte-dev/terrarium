@@ -258,6 +258,15 @@
   text-align: center;
 }
 
+/* A wrapper that stays in the tree to preserve a screen's state, but disappears from
+   layout when shown (contents) or hides entirely when not. */
+.screen-keep {
+  display: contents;
+}
+.screen-keep.hidden {
+  display: none;
+}
+
 /* ---------- main ---------- */
 .main {
   min-width: 0;
