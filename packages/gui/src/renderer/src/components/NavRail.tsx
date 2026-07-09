@@ -18,28 +18,38 @@ export function NavRail({
   onSelect,
   owner,
   onAction,
+  unread = 0,
 }: {
   active: SectionId
   onSelect: (id: SectionId) => void
   owner: MetaView['owner']
   onAction: OnAction
+  unread?: number
 }) {
   const owned = owner === 'terrarium'
   return (
     <nav className="rail" aria-label="Sections">
       <span className="grp-label">Terrarium</span>
-      {ITEMS.map(({ id, label, Icon }) => (
-        <button
-          key={id}
-          className={`nav-item ${active === id ? 'active' : ''}`}
-          type="button"
-          aria-current={active === id ? 'page' : undefined}
-          onClick={() => onSelect(id)}
-        >
-          <Icon />
-          <span>{label}</span>
-        </button>
-      ))}
+      {ITEMS.map(({ id, label, Icon }) => {
+        const badge = id === 'chat' && unread > 0
+        return (
+          <button
+            key={id}
+            className={`nav-item ${active === id ? 'active' : ''}`}
+            type="button"
+            aria-current={active === id ? 'page' : undefined}
+            onClick={() => onSelect(id)}
+          >
+            <Icon />
+            <span>{label}</span>
+            {badge && (
+              <span className="nav-badge" aria-label={`${unread} unread message${unread === 1 ? '' : 's'}`}>
+                {unread > 9 ? '9+' : unread}
+              </span>
+            )}
+          </button>
+        )
+      })}
       <div className="rail-foot">
         <div className="owner">
           <div className="row1">

@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useTheme } from './theme/useTheme'
 import { useLiveDashboard } from './hooks/useLiveDashboard'
+import { useChat, useUnread } from './hooks/useChat'
 import { TitleBar } from './components/TitleBar'
 import { NavRail, type SectionId } from './components/NavRail'
 import { Dashboard } from './components/Dashboard'
@@ -16,7 +17,9 @@ import type { ActionRequest } from './data/types'
 export function App() {
   const { theme, change } = useTheme()
   const { meta, services, logs, connected, doAction } = useLiveDashboard()
+  const chat = useChat()
   const [section, setSection] = useState<SectionId>('dashboard')
+  const unread = useUnread(chat.messages, section === 'chat')
   const [toast, setToast] = useState<ToastMsg | null>(null)
 
   const onAction = useCallback(
@@ -32,12 +35,18 @@ export function App() {
     <div className="app">
       <TitleBar theme={theme} onTheme={change} />
       <div className="body">
-        <NavRail active={section} onSelect={setSection} owner={meta.owner} onAction={onAction} />
+        <NavRail active={section} onSelect={setSection} owner={meta.owner} onAction={onAction} unread={unread} />
         <main className="main">
           {section === 'dashboard' ? (
             <Dashboard meta={meta} services={services} logs={logs} connected={connected} onAction={onAction} />
           ) : section === 'chat' ? (
-            <ChatScreen botName={meta.bot?.name ?? 'Ella'} />
+            <ChatScreen
+              botName={meta.bot?.name ?? 'Ella'}
+              messages={chat.messages}
+              status={chat.status}
+              connected={chat.connected}
+              send={chat.send}
+            />
           ) : section === 'brains' ? (
             <BrainsScreen />
           ) : section === 'bots' ? (

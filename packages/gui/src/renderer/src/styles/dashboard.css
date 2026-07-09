@@ -176,6 +176,32 @@
 .nav-item.active svg {
   color: var(--accent);
 }
+.nav-badge {
+  margin-left: auto;
+  flex: none;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  padding: 0 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #04140c;
+  font: 700 0.68rem/1 var(--f-ui);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  animation: badge-pop 0.22s ease-out;
+}
+@keyframes badge-pop {
+  from {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
 .rail-foot {
   margin-top: auto;
   display: flex;

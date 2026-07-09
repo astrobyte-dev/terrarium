@@ -2,28 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import type { ChatMsg, ChatStatus } from '../data/types'
 import { CommandMenu } from './CommandMenu'
 
-// Every bubble gets a timestamp; live `chat` events arrive with ts=null, so we
-// stamp arrival time on receipt.
-const stamp = (m: ChatMsg): ChatMsg => (m.ts ? m : { ...m, ts: Date.now() })
-
-const sameImages = (a?: string[], b?: string[]) =>
-  (a ?? []).length === (b ?? []).length && (a ?? []).every((v, i) => v === (b ?? [])[i])
-
-function reconcile(prev: ChatMsg[], incoming: ChatMsg): ChatMsg[] {
-  const m = stamp(incoming)
-  const last = prev[prev.length - 1]
-  // Collapse the gateway's consecutive duplicate replies — but never fold two
-  // distinct photos together (their captions can match, their images won't).
-  if (last && last.role === m.role && last.text === m.text && sameImages(last.images, m.images)) return prev
-  return [...prev, m]
-}
-
-// Merge the gateway's text history with Terrarium's persisted pic history by time,
-// so reopening the app shows recent photos back in their place in the conversation.
-function mergeByTime(text: ChatMsg[], pics: ChatMsg[]): ChatMsg[] {
-  return [...text, ...pics].map(stamp).sort((a, b) => (a.ts ?? 0) - (b.ts ?? 0))
-}
-
 function fmtTime(ts: number | null): string {
   if (!ts) return ''
   const d = new Date(ts)
@@ -44,11 +22,20 @@ const UserGlyph = () => (
   </svg>
 )
 
-export function ChatScreen({ botName }: { botName: string }) {
-  const [messages, setMessages] = useState<ChatMsg[]>([])
-  const [status, setStatus] = useState<ChatStatus>({ state: 'connecting', detail: '' })
+export function ChatScreen({
+  botName,
+  messages,
+  status,
+  connected,
+  send,
+}: {
+  botName: string
+  messages: ChatMsg[]
+  status: ChatStatus
+  connected: boolean
+  send: (text: string) => void
+}) {
   const [draft, setDraft] = useState('')
-  const [connected, setConnected] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -58,33 +45,7 @@ export function ChatScreen({ botName }: { botName: string }) {
     setDraft(text)
     inputRef.current?.focus()
   }
-  const sendCmd = (text: string) => {
-    if (connected) void window.terrarium.chat.send(text)
-  }
-
-  useEffect(() => {
-    const chat = window.terrarium?.chat
-    if (!chat) return
-    const offMsg = chat.onMessage((m) => setMessages((prev) => reconcile(prev, m)))
-    const offStatus = chat.onStatus(setStatus)
-    chat
-      .connect()
-      .then(async (res) => {
-        if (res.ok) {
-          const pics = (await window.terrarium?.inbox?.recent().catch(() => [])) ?? []
-          setMessages(mergeByTime(res.history, pics))
-          setConnected(true)
-          setStatus({ state: 'ready', detail: 'connected' })
-        } else {
-          setStatus({ state: 'error', detail: res.message ?? 'could not connect to the gateway' })
-        }
-      })
-      .catch((e: unknown) => setStatus({ state: 'error', detail: String(e) }))
-    return () => {
-      offMsg()
-      offStatus()
-    }
-  }, [])
+  const sendCmd = (text: string) => send(text)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -94,7 +55,7 @@ export function ChatScreen({ botName }: { botName: string }) {
     const text = draft.trim()
     if (!text || !connected) return
     setDraft('')
-    void window.terrarium.chat.send(text)
+    send(text)
   }
 
   // Index of the most recent photo message — /hd upscales the LATEST photo, so the HD
