@@ -854,6 +854,48 @@
 .chat-conn.err {
   color: var(--crit);
 }
+.chat-clear {
+  margin-left: auto;
+  border: 1px solid var(--edge-strong);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 600 0.74rem/1 var(--f-ui);
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s;
+}
+.chat-clear:hover {
+  color: var(--crit);
+  border-color: var(--crit);
+}
+.chat-clear-confirm {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font: 500 0.76rem/1 var(--f-ui);
+  color: var(--ink-soft);
+}
+.chat-clear-yes,
+.chat-clear-no {
+  border: 1px solid var(--edge-strong);
+  background: transparent;
+  font: 600 0.74rem/1 var(--f-ui);
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.chat-clear-yes {
+  color: var(--crit);
+  border-color: color-mix(in srgb, var(--crit) 55%, var(--edge));
+}
+.chat-clear-yes:hover {
+  background: color-mix(in srgb, var(--crit) 14%, transparent);
+}
+.chat-clear-no {
+  color: var(--ink-soft);
+}
 .chat-log {
   flex: 1;
   min-height: 0;
@@ -999,10 +1041,27 @@
   position: relative;
   display: block;
 }
-.react-trigger {
+.msg-tools {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.14s;
+  z-index: 4;
+}
+.msg-row:hover .msg-tools {
+  opacity: 1;
+}
+.msg-row.assistant .msg-tools {
+  left: calc(100% + 6px);
+}
+.msg-row.user .msg-tools {
+  right: calc(100% + 6px);
+  flex-direction: row-reverse;
+}
+.msg-tool {
   width: 24px;
   height: 24px;
   border: 1px solid var(--edge-strong);
@@ -1012,25 +1071,19 @@
   display: grid;
   place-items: center;
   cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.14s, color 0.14s, border-color 0.14s;
+  transition: color 0.14s, border-color 0.14s;
 }
-.react-trigger svg {
-  width: 14px;
-  height: 14px;
+.msg-tool svg {
+  width: 13px;
+  height: 13px;
 }
-.msg-row:hover .react-trigger {
-  opacity: 1;
-}
-.react-trigger:hover {
+.msg-tool:hover {
   color: var(--accent);
   border-color: var(--accent);
 }
-.msg-row.assistant .react-trigger {
-  right: -30px;
-}
-.msg-row.user .react-trigger {
-  left: -30px;
+.msg-tool.del:hover {
+  color: var(--crit);
+  border-color: var(--crit);
 }
 .react-picker {
   position: absolute;

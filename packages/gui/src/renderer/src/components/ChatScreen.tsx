@@ -5,9 +5,18 @@ import { CommandMenu } from './CommandMenu'
 import { Lightbox } from './Lightbox'
 import { MessageReactions } from './MessageReactions'
 
-// A stable-enough key for a message to hang a reaction on (no server IDs exist).
+// A stable-enough key for a message to hang a reaction / deletion on (no server IDs).
 const msgKey = (m: ChatMsg) => `${m.role}|${m.ts ?? 0}|${(m.text ?? '').slice(0, 50)}`
 const REACTIONS_STORE = 'terrarium.reactions'
+const DELETED_STORE = 'terrarium.deleted'
+
+function loadStore<T>(key: string, fallback: T): T {
+  try {
+    return JSON.parse(localStorage.getItem(key) ?? '') as T
+  } catch {
+    return fallback
+  }
+}
 
 function fmtTime(ts: number | null): string {
   if (!ts) return ''
@@ -100,8 +109,27 @@ export function ChatScreen({
   const [menuOpen, setMenuOpen] = useState(false)
   const [names, setNames] = useState<Record<string, string>>({})
   const [roster, setRoster] = useState<{ slug: string; name: string }[]>([])
+  // Locally hidden messages (delete / clear). GUI-side only — the shared brain still
+  // remembers — but it sticks across restarts and reconnects.
+  const [deleted, setDeleted] = useState<string[]>(() => loadStore<string[]>(DELETED_STORE, []))
+  const [clearConfirm, setClearConfirm] = useState(false)
+  useEffect(() => {
+    try {
+      localStorage.setItem(DELETED_STORE, JSON.stringify(deleted.slice(-2000)))
+    } catch {
+      /* best effort */
+    }
+  }, [deleted])
+  const deletedSet = useMemo(() => new Set(deleted), [deleted])
+  const visible = useMemo(() => messages.filter((m) => !deletedSet.has(msgKey(m))), [messages, deletedSet])
+  const hideMsg = (m: ChatMsg) => setDeleted((prev) => [...prev, msgKey(m)])
+  const clearChat = () => {
+    setDeleted((prev) => [...prev, ...visible.map(msgKey)])
+    setClearConfirm(false)
+  }
+
   // Every photo in the log, in order, so the lightbox can arrow through them all.
-  const allImages = useMemo(() => messages.flatMap((m) => m.images ?? []), [messages])
+  const allImages = useMemo(() => visible.flatMap((m) => m.images ?? []), [visible])
   const [zoomIdx, setZoomIdx] = useState<number | null>(null)
   const [faceZoom, setFaceZoom] = useState<string | null>(null)
   const stripSrc = zoomIdx != null ? allImages[zoomIdx] ?? null : null
@@ -180,7 +208,7 @@ export function ChatScreen({
   // Index of the most recent photo message — /hd upscales the LATEST photo, so the HD
   // button only makes sense there. Redo/×3 re-fire a specific shot's own command.
   let lastImageIdx = -1
-  messages.forEach((m, i) => {
+  visible.forEach((m, i) => {
     if (m.images && m.images.length > 0) lastImageIdx = i
   })
 
@@ -214,20 +242,41 @@ export function ChatScreen({
         <span className={`chat-conn ${connected ? 'on' : status.state === 'error' ? 'err' : ''}`}>
           {connLabel(status, connected, activeName)}
         </span>
+        {visible.length > 0 &&
+          (clearConfirm ? (
+            <span className="chat-clear-confirm">
+              Clear this view?
+              <button type="button" className="chat-clear-yes" onClick={clearChat}>
+                Clear
+              </button>
+              <button type="button" className="chat-clear-no" onClick={() => setClearConfirm(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="chat-clear"
+              title="Hide all messages from this view — stays in her memory"
+              onClick={() => setClearConfirm(true)}
+            >
+              Clear
+            </button>
+          ))}
       </div>
 
       <div className="chat-log">
-        {messages.length === 0 && status.state !== 'error' && (
+        {visible.length === 0 && status.state !== 'error' && (
           <div className="chat-empty">Say hi to start — this is the same conversation as Telegram.</div>
         )}
         {status.state === 'error' && (
           <div className="chat-error">Couldn’t reach the gateway. Is it running? {status.detail}</div>
         )}
 
-        {messages.map((m, i) => {
-          const prev = messages[i - 1]
+        {visible.map((m, i) => {
+          const prev = visible[i - 1]
           const runStart = !prev || prev.role !== m.role
-          const slug = m.role === 'assistant' ? personaSlugAt(messages, i) : null
+          const slug = m.role === 'assistant' ? personaSlugAt(visible, i) : null
           const who = m.role === 'assistant' ? personaName(slug, names, botName) : 'You'
           const key = msgKey(m)
           return (
@@ -275,12 +324,33 @@ export function ChatScreen({
                 ) : (
                   <div className="bubble">{m.text}</div>
                 )}
-                  <MessageReactions
-                    reaction={reactions[key]}
-                    open={pickerKey === key}
-                    onOpen={() => setPickerKey(pickerKey === key ? null : key)}
-                    onPick={(e) => react(m, e)}
-                  />
+                  <div className="msg-tools">
+                    <button
+                      type="button"
+                      className="msg-tool"
+                      aria-label="React"
+                      title="React"
+                      onClick={() => setPickerKey(pickerKey === key ? null : key)}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M8.5 14.5c.9 1.2 2.1 1.8 3.5 1.8s2.6-.6 3.5-1.8" />
+                        <path d="M9 9.5h.01M15 9.5h.01" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      className="msg-tool del"
+                      aria-label="Delete message"
+                      title="Delete for me (stays in her memory)"
+                      onClick={() => hideMsg(m)}
+                    >
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
+                        <path d="M6 6l12 12M18 6L6 18" />
+                      </svg>
+                    </button>
+                  </div>
+                  <MessageReactions reaction={reactions[key]} open={pickerKey === key} onPick={(e) => react(m, e)} />
                 </div>
                 <span className="msg-time">{fmtTime(m.ts)}</span>
               </div>
