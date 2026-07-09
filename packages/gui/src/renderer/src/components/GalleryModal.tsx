@@ -7,15 +7,19 @@ import { Lightbox } from './Lightbox'
 // active /be persona. Opened from the Characters screen; click a thumb to enlarge.
 export function GalleryModal({ slug, name, onClose }: { slug: string; name: string; onClose: () => void }) {
   const [entries, setEntries] = useState<GalleryEntry[] | null>(null)
-  const [zoom, setZoom] = useState<string | null>(null)
+  const [zoomIdx, setZoomIdx] = useState<number | null>(null)
+  const list = entries ?? []
+  const zoomSrc = zoomIdx != null ? list[zoomIdx]?.image ?? null : null
 
   useEffect(() => {
+    // Esc closes the lightbox first, then the modal (the Lightbox handles its own
+    // Esc, but it's unmounted when no image is open, so cover the modal case here).
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') (zoom ? setZoom(null) : onClose())
+      if (e.key === 'Escape' && zoomIdx == null) onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [zoom, onClose])
+  }, [zoomIdx, onClose])
 
   useEffect(() => {
     let alive = true
@@ -54,7 +58,7 @@ export function GalleryModal({ slug, name, onClose }: { slug: string; name: stri
                 key={`${e.image}-${i}`}
                 type="button"
                 className="gallery-thumb"
-                onClick={() => setZoom(e.image)}
+                onClick={() => setZoomIdx(i)}
                 title={e.caption || 'Enlarge'}
               >
                 <img src={e.image} alt={e.caption || `photo of ${name}`} loading="lazy" />
@@ -63,7 +67,13 @@ export function GalleryModal({ slug, name, onClose }: { slug: string; name: stri
           </div>
         )}
       </div>
-      <Lightbox src={zoom} alt={`${name} photo`} onClose={() => setZoom(null)} />
+      <Lightbox
+        src={zoomSrc}
+        alt={`${name} photo`}
+        onClose={() => setZoomIdx(null)}
+        onPrev={zoomIdx != null && zoomIdx > 0 ? () => setZoomIdx(zoomIdx - 1) : undefined}
+        onNext={zoomIdx != null && zoomIdx < list.length - 1 ? () => setZoomIdx(zoomIdx + 1) : undefined}
+      />
     </div>
   )
 }

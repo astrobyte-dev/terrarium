@@ -1809,6 +1809,33 @@
 .lightbox-close:hover {
   background: color-mix(in srgb, #000 70%, transparent);
 }
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3rem;
+  height: 3rem;
+  border: none;
+  border-radius: 50%;
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.14s;
+}
+.lightbox-nav:hover {
+  background: color-mix(in srgb, #000 72%, transparent);
+}
+.lightbox-nav.prev {
+  left: 1.1rem;
+}
+.lightbox-nav.next {
+  right: 1.1rem;
+}
 
 .bb-preview {
   border-left: 1px solid var(--edge);

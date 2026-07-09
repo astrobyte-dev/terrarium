@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ChatMsg, ChatStatus } from '../data/types'
 import { deriveSlug } from '../data/slug'
 import { CommandMenu } from './CommandMenu'
@@ -68,7 +68,10 @@ export function ChatScreen({
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [names, setNames] = useState<Record<string, string>>({})
-  const [zoom, setZoom] = useState<string | null>(null)
+  // Every photo in the log, in order, so the lightbox can arrow through them all.
+  const allImages = useMemo(() => messages.flatMap((m) => m.images ?? []), [messages])
+  const [zoomIdx, setZoomIdx] = useState<number | null>(null)
+  const zoomSrc = zoomIdx != null ? allImages[zoomIdx] ?? null : null
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -155,7 +158,7 @@ export function ChatScreen({
                         src={src}
                         alt={m.text || `photo from ${who}`}
                         loading="lazy"
-                        onClick={() => setZoom(src)}
+                        onClick={() => setZoomIdx(allImages.indexOf(src))}
                         title="Click to enlarge"
                       />
                     ))}
@@ -240,7 +243,13 @@ export function ChatScreen({
         </button>
       </form>
 
-      <Lightbox src={zoom} alt="chat photo" onClose={() => setZoom(null)} />
+      <Lightbox
+        src={zoomSrc}
+        alt="chat photo"
+        onClose={() => setZoomIdx(null)}
+        onPrev={zoomIdx != null && zoomIdx > 0 ? () => setZoomIdx(zoomIdx - 1) : undefined}
+        onNext={zoomIdx != null && zoomIdx < allImages.length - 1 ? () => setZoomIdx(zoomIdx + 1) : undefined}
+      />
     </div>
   )
 }
