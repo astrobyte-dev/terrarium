@@ -124,9 +124,9 @@ export function ChatScreen({
       /* best effort */
     }
   }, [reactions])
-  const react = (m: ChatMsg, i: number, emoji: string) => {
+  // Reactions are a silent, local badge — no message is sent to the conversation.
+  const react = (m: ChatMsg, emoji: string) => {
     const key = msgKey(m)
-    const turningOn = reactions[key] !== emoji
     setReactions((prev) => {
       const next = { ...prev }
       if (next[key] === emoji) delete next[key] // toggle off
@@ -134,14 +134,6 @@ export function ChatScreen({
       return next
     })
     setPickerKey(null)
-    // A reaction to HER message is also a nudge: send it so she replies in character.
-    // Just the emoji for her latest line; emoji + a short quote for an older one.
-    if (turningOn && m.role === 'assistant' && connected) {
-      const full = (m.text ?? '').replace(/\s+/g, ' ').trim()
-      const isLast = i === messages.length - 1
-      if (isLast || !full) send(emoji)
-      else send(`${emoji} — about when you said "${full.slice(0, 80)}${full.length > 80 ? '…' : ''}"`)
-    }
   }
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -287,7 +279,7 @@ export function ChatScreen({
                     reaction={reactions[key]}
                     open={pickerKey === key}
                     onOpen={() => setPickerKey(pickerKey === key ? null : key)}
-                    onPick={(e) => react(m, i, e)}
+                    onPick={(e) => react(m, e)}
                   />
                 </div>
                 <span className="msg-time">{fmtTime(m.ts)}</span>
