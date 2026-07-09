@@ -142,7 +142,9 @@ export function BotBuilderScreen({
     setGenning(true)
     setPortraitNote(null)
     const r = await window.terrarium.portraits.generate({
-      identity: joinIdentity(f.photoIdentity, photoExtra),
+      identity: f.photoIdentity,
+      look: f.look,
+      extra: photoExtra,
       outfit: f.photoOutfit,
       shot: f.photoShot,
     })

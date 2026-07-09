@@ -118,6 +118,12 @@ export interface PortraitGenInput {
   identity: string
   outfit: string
   shot: string
+  /** The Look field — folded in with identity because it carries the concrete
+   *  ethnicity markers (skin tone, hair) the sparse photo Identity often omits. */
+  look?: string
+  /** Apparent-age + skin cues, kept separate so the identity brief can be weighted
+   *  without nesting inside the skin phrase's own parens. */
+  extra?: string
 }
 export interface PortraitGenResult {
   ok: boolean

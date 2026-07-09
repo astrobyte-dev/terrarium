@@ -21,22 +21,26 @@ const NEGATIVE =
   'child, kid, underage, teen, loli'
 
 // Candidates should be DIFFERENT women who all fit the brief — not one face in three
-// poses. A batch shares conditioning + near-adjacent seeds, so faces converge; instead
-// we render each candidate separately with its own far-apart seed AND a distinct
-// face-variation phrase. These nudge face shape / features / expression only — they
-// never touch the ethnicity, age, or outfit the user specified.
+// poses. Each candidate is a separate render with its own far-apart seed AND a distinct
+// variation phrase. CRITICAL: these vary BONE STRUCTURE ONLY — never complexion, hair,
+// or "girl-next-door"/"freckles"-type wording, which is ethnicity-coded and was
+// overriding the identity (a Japanese-American brief rendered as caucasian). Different
+// seeds already give expression/hair variety; the ethnicity must come from the identity.
 const FACE_VARIANTS = [
-  'round face, soft delicate features, gentle smile',
-  'high cheekbones, defined jawline, sultry look',
-  'oval face, full lips, warm inviting expression',
-  'heart-shaped face, big expressive eyes',
-  'slender face, subtle natural freckles, playful smile',
-  'fuller softer face, bright cheerful expression',
-  'striking angular features, intense confident gaze',
-  'girl-next-door features, relaxed natural smile',
+  'round face shape',
+  'oval face shape',
+  'heart-shaped face',
+  'square jawline',
+  'high cheekbones',
+  'soft delicate bone structure',
+  'strong defined bone structure',
+  'slender face',
 ]
 
 const HOW_MANY = 3
+// The identity carries the ethnicity; on a caucasian-default checkpoint a single
+// ethnicity token loses unless it's weighted up. Emphasise the whole identity brief.
+const IDENTITY_WEIGHT = 1.35
 
 // Fisher–Yates on a copy — pick `n` distinct variants so the candidates differ.
 function pickVariants(n: number): string[] {
@@ -50,8 +54,15 @@ function pickVariants(n: number): string[] {
 
 function buildPositive(p: PortraitGenInput, variant: string): string {
   const bits = ['score_9, score_8_up, score_7_up, photorealistic, raw photo, 1girl, solo']
-  if (p.identity.trim()) bits.push(p.identity.trim())
+  // The photo Identity is often thin on ethnicity ("Japanese-American" alone), while the
+  // Look field carries the concrete markers (skin tone, hair colour/texture, eyes). Fold
+  // Look IN and weight the whole brief up, or a caucasian-default checkpoint ignores a
+  // lone ethnicity token. No parens in this brief (skin markers ride in `extra`), so the
+  // (text:weight) wrap can't nest badly.
+  const brief = [p.look, p.identity].map((t) => (t ?? '').trim()).filter(Boolean).join(', ')
+  if (brief) bits.push(`(${brief}:${IDENTITY_WEIGHT})`)
   bits.push(variant)
+  if (p.extra?.trim()) bits.push(p.extra.trim())
   if (p.outfit.trim()) bits.push(`wearing ${p.outfit.trim()}`)
   if (p.shot.trim()) bits.push(p.shot.trim())
   bits.push('upper body portrait, looking at viewer, detailed face, natural skin')
@@ -112,8 +123,8 @@ export function setupPortraits(): void {
   prune()
 
   ipcMain.handle('portraits:generate', async (_e, input: PortraitGenInput): Promise<PortraitGenResult> => {
-    if (!input.identity.trim() && !input.outfit.trim() && !input.shot.trim()) {
-      return { ok: false, images: [], error: 'fill the Photo pipeline fields (Identity/Outfit/Shot) first' }
+    if (!input.identity.trim() && !input.outfit.trim() && !input.shot.trim() && !(input.look ?? '').trim()) {
+      return { ok: false, images: [], error: 'fill the Look or Photo pipeline fields (Identity/Outfit/Shot) first' }
     }
     try {
       const variants = pickVariants(HOW_MANY)
