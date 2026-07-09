@@ -9,6 +9,33 @@
   background: var(--bg);
 }
 
+/* ---------- themed scrollbars (default Chromium bar is a light grey that
+   clashes with the dark chrome) ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--edge-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--edge-strong);
+  border-radius: 8px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ink-faint);
+  background-clip: padding-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* ---------- title bar (custom chrome; draggable) ---------- */
 .titlebar {
   display: flex;
@@ -1611,6 +1638,169 @@
 .doc-repair-note.err {
   border-color: var(--crit);
   color: var(--crit);
+}
+
+/* ---------- characters (roster management) ---------- */
+.chars {
+  padding: 1.4rem 1.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+.chars-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.chars-head h2 {
+  margin: 0 0 0.3rem;
+  font: 600 1.2rem/1 var(--f-display);
+  color: var(--ink);
+}
+.chars-head p {
+  margin: 0;
+  max-width: 60ch;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.chars-head code,
+.chars-foot code {
+  font: 500 0.85em/1 var(--f-mono);
+  color: var(--ink);
+}
+.chars-budget {
+  border: 1px solid var(--edge);
+  border-radius: var(--radius);
+  background: var(--surface);
+  padding: 0.75rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.chars-budget.tight {
+  border-color: color-mix(in srgb, var(--warn) 45%, var(--edge));
+}
+.chars-budget-row {
+  display: flex;
+  justify-content: space-between;
+  font: 600 0.78rem/1 var(--f-ui);
+  color: var(--ink-soft);
+}
+.chars-budget-num {
+  font-family: var(--f-mono);
+  color: var(--ink);
+}
+.chars-bar {
+  height: 7px;
+  border-radius: 4px;
+  background: var(--surface-2);
+  overflow: hidden;
+}
+.chars-bar i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.chars-budget.tight .chars-bar i {
+  background: var(--warn);
+}
+.chars-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.chars-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  padding: 0.7rem 0.9rem;
+}
+.chars-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.chars-name {
+  font: 600 0.92rem/1.2 var(--f-ui);
+  color: var(--ink);
+}
+.chars-age {
+  color: var(--ink-faint);
+  font-weight: 500;
+}
+.chars-size {
+  font: 500 0.72rem/1 var(--f-mono);
+  color: var(--ink-faint);
+}
+.chars-remove,
+.chars-cancel {
+  border: 1px solid var(--edge-strong);
+  background: transparent;
+  color: var(--ink-soft);
+  font: 600 0.76rem/1 var(--f-ui);
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.chars-remove:hover:not(:disabled) {
+  color: var(--crit);
+  border-color: var(--crit);
+}
+.chars-remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.chars-confirm {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font: 500 0.78rem/1 var(--f-ui);
+  color: var(--ink-soft);
+}
+.chars-del {
+  border: 1px solid var(--crit);
+  background: color-mix(in srgb, var(--crit) 14%, var(--surface));
+  color: var(--crit);
+  font: 600 0.76rem/1 var(--f-ui);
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.chars-note {
+  font-size: 0.83rem;
+  line-height: 1.45;
+  padding: 0.6rem 0.8rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge-strong);
+  background: var(--surface);
+  color: var(--ink);
+}
+.chars-note.ok {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--edge));
+}
+.chars-note.err {
+  border-color: var(--crit);
+  color: var(--crit);
+}
+.chars-empty {
+  color: var(--ink-faint);
+  font-size: 0.86rem;
+}
+.chars-foot {
+  margin: 0.3rem 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  border-top: 1px solid var(--edge);
+  padding-top: 0.9rem;
 }
 
 /* ---------- placeholder (non-dashboard sections, M7a) ---------- */

@@ -43,6 +43,13 @@ export const ChatIcon = ({ className }: P) => (
     <path d="M4 5h16v11H9l-4 3v-3H4Z" />
   </svg>
 )
+export const RosterIcon = ({ className }: P) => (
+  <svg className={className} {...base}>
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3.5 20c0-3.3 2.5-5 5.5-5s5.5 1.7 5.5 5" />
+    <path d="M16 5.2a3 3 0 0 1 0 5.6M17.5 20c0-3-1.4-4.6-3.5-5.2" />
+  </svg>
+)
 export const DoctorIcon = ({ className }: P) => (
   <svg className={className} {...base}>
     <path d="M3 12h4l2 5 4-12 2 7h6" />

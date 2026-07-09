@@ -7,6 +7,7 @@ import type {
   BotSpecInput,
   BrainLiveness,
   BrainsList,
+  CharRemoveResult,
   ChatConnectResult,
   ChatMsg,
   ChatStatus,
@@ -17,6 +18,7 @@ import type {
   DraftSeedInput,
   LogLine,
   MetaView,
+  RosterView,
   ServiceView,
 } from '../shared/contract'
 
@@ -64,6 +66,10 @@ const api = {
   doctor: {
     report: (): Promise<DoctorReportView> => ipcRenderer.invoke('doctor:report'),
     repair: (): Promise<DoctorRepairResult> => ipcRenderer.invoke('doctor:repair'),
+  },
+  characters: {
+    list: (): Promise<RosterView> => ipcRenderer.invoke('characters:list'),
+    remove: (heading: string): Promise<CharRemoveResult> => ipcRenderer.invoke('characters:remove', heading),
   },
 }
 

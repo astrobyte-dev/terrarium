@@ -113,6 +113,25 @@ export interface BotCreateResult {
   fullCardPath: string | null
 }
 
+// ---- character roster (manage who's in AGENTS.md / the 12k budget) ----
+export interface RosterCardView {
+  heading: string
+  name: string
+  age: number
+  chars: number
+}
+export interface RosterView {
+  cards: RosterCardView[]
+  totalChars: number
+  limit: number
+  headroom: number
+}
+export interface CharRemoveResult {
+  ok: boolean
+  message: string
+  roster?: RosterView
+}
+
 // ---- bot builder: AI-assisted drafting (local model fills the personality) ----
 export type DraftMode = 'sfw' | 'nsfw'
 export interface DraftSeedInput {

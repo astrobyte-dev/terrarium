@@ -7,6 +7,7 @@ import { Dashboard } from './components/Dashboard'
 import { ChatScreen } from './components/ChatScreen'
 import { BrainsScreen } from './components/BrainsScreen'
 import { BotBuilderScreen } from './components/BotBuilderScreen'
+import { CharactersScreen } from './components/CharactersScreen'
 import { DoctorScreen } from './components/DoctorScreen'
 import { Placeholder } from './components/Placeholder'
 import { Toast, type ToastMsg } from './components/Toast'
@@ -41,6 +42,8 @@ export function App() {
             <BrainsScreen />
           ) : section === 'bots' ? (
             <BotBuilderScreen />
+          ) : section === 'characters' ? (
+            <CharactersScreen />
           ) : section === 'doctor' ? (
             <DoctorScreen />
           ) : (

@@ -1,12 +1,13 @@
 import type { MetaView } from '../data/types'
 import type { OnAction } from './actions'
-import { DashIcon, BotIcon, BrainsIcon, ChatIcon, DoctorIcon } from './icons'
+import { DashIcon, BotIcon, BrainsIcon, ChatIcon, DoctorIcon, RosterIcon } from './icons'
 
-export type SectionId = 'dashboard' | 'bots' | 'brains' | 'chat' | 'doctor'
+export type SectionId = 'dashboard' | 'bots' | 'characters' | 'brains' | 'chat' | 'doctor'
 
 const ITEMS: { id: SectionId; label: string; Icon: typeof DashIcon }[] = [
   { id: 'dashboard', label: 'Dashboard', Icon: DashIcon },
   { id: 'bots', label: 'Bot Builder', Icon: BotIcon },
+  { id: 'characters', label: 'Characters', Icon: RosterIcon },
   { id: 'brains', label: 'Brains', Icon: BrainsIcon },
   { id: 'chat', label: 'Chat', Icon: ChatIcon },
   { id: 'doctor', label: 'Doctor', Icon: DoctorIcon },

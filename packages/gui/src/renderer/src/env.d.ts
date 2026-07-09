@@ -7,6 +7,7 @@ import type {
   BotSpecInput,
   BrainLiveness,
   BrainsList,
+  CharRemoveResult,
   ChatConnectResult,
   ChatMsg,
   ChatStatus,
@@ -17,6 +18,7 @@ import type {
   DraftSeedInput,
   LogLine,
   MetaView,
+  RosterView,
   ServiceView,
 } from '../../shared/contract'
 
@@ -56,6 +58,10 @@ declare global {
       doctor: {
         report: () => Promise<DoctorReportView>
         repair: () => Promise<DoctorRepairResult>
+      }
+      characters: {
+        list: () => Promise<RosterView>
+        remove: (heading: string) => Promise<CharRemoveResult>
       }
     }
   }

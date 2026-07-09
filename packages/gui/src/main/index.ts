@@ -6,6 +6,7 @@ import { setupCore } from './core'
 import { setupChat } from './chat'
 import { setupBrains } from './brains'
 import { setupBots } from './bots'
+import { setupCharacters } from './characters'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
 
@@ -136,6 +137,7 @@ app.whenReady().then(() => {
   setupInbox(() => win) // pic daemon → inbox → image bubbles (M8c)
   setupBrains() // safe in-place primary-model swap
   setupBots() // create companions (full card + AGENTS.md compact card)
+  setupCharacters() // manage the roster (view sizes, remove to reclaim AGENTS.md budget)
   setupDoctor() // read-only health check
   bootlog('setup complete')
 
