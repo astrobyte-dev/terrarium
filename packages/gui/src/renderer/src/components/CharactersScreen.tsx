@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { RosterCardView, RosterView } from '../data/types'
+import type { VoiceCatalogView } from '../../../shared/contract'
 import { deriveSlug } from '../data/slug'
 import { GalleryModal } from './GalleryModal'
+import { VoicePicker } from './VoicePicker'
 
 // The shared AGENTS.md character roster. OpenClaw hard-truncates that file at ~12k
 // chars, so this view shows who's using the budget and lets you remove cards to make
@@ -12,6 +14,7 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
   const [confirming, setConfirming] = useState<string | null>(null)
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [gallery, setGallery] = useState<{ slug: string; name: string } | null>(null)
+  const [voiceCat, setVoiceCat] = useState<VoiceCatalogView | null>(null)
 
   const load = useCallback(async () => {
     const c = window.terrarium?.characters
@@ -19,6 +22,10 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
     setBusy(true)
     setRoster(await c.list())
     setBusy(false)
+  }, [])
+
+  useEffect(() => {
+    window.terrarium?.voice?.catalog().then(setVoiceCat).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -90,6 +97,7 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
               </div>
             ) : (
               <span className="chars-actions">
+                {voiceCat?.ready && <VoicePicker slug={deriveSlug(c.name)} catalog={voiceCat} />}
                 <button
                   className="chars-edit"
                   type="button"

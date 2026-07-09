@@ -16,6 +16,8 @@ import type {
   CoreState,
   GalleryEntry,
   MemoryView,
+  VoiceCatalogView,
+  VoiceSay,
   DoctorReportView,
   DoctorRepairResult,
   DraftFieldKey,
@@ -66,6 +68,12 @@ const api = {
   memory: {
     list: (): Promise<MemoryView> => ipcRenderer.invoke('memory:list'),
     save: (memories: string[]): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('memory:save', memories),
+  },
+  voice: {
+    catalog: (): Promise<VoiceCatalogView> => ipcRenderer.invoke('voice:catalog'),
+    setVoice: (slug: string, voiceId: string): Promise<{ ok: boolean }> => ipcRenderer.invoke('voice:setVoice', slug, voiceId),
+    say: (text: string, slug?: string): Promise<VoiceSay> => ipcRenderer.invoke('voice:say', text, slug),
+    preview: (voiceId: string): Promise<VoiceSay> => ipcRenderer.invoke('voice:preview', voiceId),
   },
   inbox: {
     // Recent pics (persisted) to replay into a freshly-connected chat, merged by ts.

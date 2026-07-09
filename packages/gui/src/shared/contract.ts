@@ -265,6 +265,28 @@ export interface ProactiveSettings {
   wakingEndHour: number
 }
 
+// Kokoro voice presets. `map` keys are /be slugs → a preset `id`; `default` is the
+// fallback voice; `ready` is false until the engine + model are installed.
+export interface VoiceOption {
+  id: string
+  label: string
+  gender: 'female' | 'male'
+  accent: string
+}
+export interface VoiceCatalog {
+  default: string
+  voices: VoiceOption[]
+}
+export interface VoiceCatalogView extends VoiceCatalog {
+  ready: boolean
+  map: Record<string, string>
+}
+export interface VoiceSay {
+  ok: boolean
+  url?: string
+  message?: string
+}
+
 // The Memory panel view: `memories` = curated long-term memory (workspace/MEMORY.md,
 // user-owned, read by the brain); `facts` = the pic daemon's auto-extracted facts
 // (about-corey.md), shown read-only so any can be pinned up into `memories`.

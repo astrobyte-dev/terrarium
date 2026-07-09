@@ -8,6 +8,7 @@ import { setupBrains } from './brains'
 import { setupBots } from './bots'
 import { setupCharacters } from './characters'
 import { setupMemory } from './memory'
+import { resolveVoiceAudio, setupVoice } from './voice'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
 import { resolvePortraitImage, resolveRefImage, setupPortraits } from './portraits'
@@ -134,7 +135,9 @@ app.whenReady().then(() => {
           ? resolvePortraitImage(pathname)
           : host === 'ref'
             ? resolveRefImage(pathname)
-            : null
+            : host === 'voice'
+              ? resolveVoiceAudio(pathname)
+              : null
     if (!abs) return new Response('not found', { status: 404 })
     return net.fetch(pathToFileURL(abs).toString())
   })
@@ -149,6 +152,7 @@ app.whenReady().then(() => {
   setupBots() // create companions (full card + AGENTS.md compact card)
   setupCharacters() // manage the roster (view sizes, remove to reclaim AGENTS.md budget)
   setupMemory() // curated long-term memory (workspace/MEMORY.md) + auto-facts view
+  setupVoice() // Kokoro voice notes (CPU/ONNX) + per-character preset voices
   setupDoctor() // read-only health check
   bootlog('setup complete')
 

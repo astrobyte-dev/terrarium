@@ -23,6 +23,8 @@ import type {
   GalleryEntry,
   LogLine,
   MemoryView,
+  VoiceCatalogView,
+  VoiceSay,
   MetaView,
   PortraitGenInput,
   PortraitGenResult,
@@ -59,6 +61,12 @@ declare global {
       memory: {
         list: () => Promise<MemoryView>
         save: (memories: string[]) => Promise<{ ok: boolean; message?: string }>
+      }
+      voice: {
+        catalog: () => Promise<VoiceCatalogView>
+        setVoice: (slug: string, voiceId: string) => Promise<{ ok: boolean }>
+        say: (text: string, slug?: string) => Promise<VoiceSay>
+        preview: (voiceId: string) => Promise<VoiceSay>
       }
       inbox: {
         recent: () => Promise<ChatMsg[]>

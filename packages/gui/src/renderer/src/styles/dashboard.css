@@ -1349,6 +1349,64 @@
   color: var(--crit);
   border-color: var(--crit);
 }
+.msg-tool.voice.playing {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.msg-tool.voice:disabled {
+  cursor: default;
+}
+.voice-spin {
+  animation: voice-spin 0.8s linear infinite;
+}
+@keyframes voice-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Per-character voice picker (Characters screen). */
+.voice-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-right: 0.15rem;
+}
+.voice-pick-ico {
+  display: inline-flex;
+  color: var(--ink-faint);
+}
+.voice-pick-ico svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+.voice-pick select {
+  background: var(--surface-2, var(--surface));
+  color: var(--ink);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.35rem;
+  font: 500 0.74rem/1 var(--f-ui);
+  cursor: pointer;
+  max-width: 9rem;
+}
+.voice-prev {
+  width: 1.55rem;
+  height: 1.55rem;
+  flex-shrink: 0;
+  border: 1px solid var(--edge-strong);
+  background: transparent;
+  color: var(--ink-soft);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 0.62rem;
+  display: grid;
+  place-items: center;
+}
+.voice-prev:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
 .react-picker {
   position: absolute;
   bottom: calc(100% + 6px);

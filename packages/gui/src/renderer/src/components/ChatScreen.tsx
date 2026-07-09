@@ -169,6 +169,34 @@ export function ChatScreen({
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Voice notes (Kokoro). One <audio> reused; we track which message is generating vs
+  // currently playing so the speaker button can show a spinner / stop state.
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+  const [voiceBusy, setVoiceBusy] = useState<string | null>(null)
+  const [voicePlaying, setVoicePlaying] = useState<string | null>(null)
+  const playVoice = async (m: ChatMsg, key: string, slug: string | null) => {
+    if (voicePlaying === key && audioRef.current) {
+      audioRef.current.pause()
+      setVoicePlaying(null)
+      return
+    }
+    setVoiceBusy(key)
+    try {
+      const r = await window.terrarium.voice.say(m.text, slug ?? undefined)
+      if (r.ok && r.url) {
+        if (!audioRef.current) audioRef.current = new Audio()
+        const a = audioRef.current
+        a.src = r.url
+        a.onended = () => setVoicePlaying(null)
+        await a.play()
+        setVoicePlaying(key)
+      }
+    } catch {
+      /* ignore playback errors */
+    }
+    setVoiceBusy(null)
+  }
+
   // Resolve the active persona: slug from the last /be, display name from the roster.
   const activeSlug = lastPersonaSlug(messages)
   const activeName = personaName(activeSlug, names, botName)
@@ -342,6 +370,32 @@ export function ChatScreen({
                   <div className="bubble">{m.text}</div>
                 )}
                   <div className="msg-tools">
+                    {m.role === 'assistant' && m.text && (
+                      <button
+                        type="button"
+                        className={`msg-tool voice ${voicePlaying === key ? 'playing' : ''}`}
+                        aria-label={voicePlaying === key ? 'Stop' : 'Play voice'}
+                        title="Play in her voice"
+                        disabled={voiceBusy === key}
+                        onClick={() => playVoice(m, key, slug)}
+                      >
+                        {voiceBusy === key ? (
+                          <svg className="voice-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                            <path d="M12 3a9 9 0 1 0 9 9" />
+                          </svg>
+                        ) : voicePlaying === key ? (
+                          <svg viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="7" y="6" width="3.4" height="12" rx="1" />
+                            <rect x="13.6" y="6" width="3.4" height="12" rx="1" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 5 6 9H3v6h3l5 4V5z" />
+                            <path d="M15.5 8.5a5 5 0 0 1 0 7M18 6a8 8 0 0 1 0 12" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                     <button
                       type="button"
                       className="msg-tool"
