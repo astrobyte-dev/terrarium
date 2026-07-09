@@ -3,6 +3,7 @@ import type { BotPreview, BotSpecInput, DraftFieldKey } from '../data/types'
 import { deriveSlug } from '../data/slug'
 import { Lightbox } from './Lightbox'
 import { SkinDetail } from './SkinDetail'
+import { ApparentAge } from './ApparentAge'
 import { BuilderRoster } from './BuilderRoster'
 
 interface Form {
@@ -59,11 +60,11 @@ function specToForm(spec: BotSpecInput): Form {
   }
 }
 
-// Skin-detail markers ride along in the photo Identity so both portraits and /pic
-// carry them; joined here so buildSpec stays the single source of the identity string.
-const joinIdentity = (identity: string, skin: string) => [identity.trim(), skin.trim()].filter(Boolean).join(', ')
+// Apparent-age + skin-detail cues ride along in the photo Identity so both portraits
+// and /pic carry them; joined here so buildSpec stays the single source of the string.
+const joinIdentity = (...parts: string[]) => parts.map((p) => p.trim()).filter(Boolean).join(', ')
 
-function buildSpec(f: Form, skin = ''): BotSpecInput {
+function buildSpec(f: Form, photoExtra = ''): BotSpecInput {
   return {
     slug: deriveSlug(f.displayName),
     displayName: f.displayName.trim(),
@@ -76,7 +77,7 @@ function buildSpec(f: Form, skin = ''): BotSpecInput {
     speechStyle: lines(f.speechStyle),
     openerIdeas: lines(f.openerIdeas),
     hardRules: lines(f.hardRules),
-    photo: { identity: joinIdentity(f.photoIdentity, skin), outfit: f.photoOutfit.trim(), shot: f.photoShot.trim() },
+    photo: { identity: joinIdentity(f.photoIdentity, photoExtra), outfit: f.photoOutfit.trim(), shot: f.photoShot.trim() },
   }
 }
 
@@ -95,10 +96,13 @@ export function BotBuilderScreen() {
   const [genning, setGenning] = useState(false)
   const [portraitNote, setPortraitNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [skin, setSkin] = useState('')
+  const [apparentAge, setApparentAge] = useState('')
   const [zoom, setZoom] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ slug: string; heading: string } | null>(null)
   const [rosterKey, setRosterKey] = useState(0)
   const onSkin = useCallback((phrase: string) => setSkin(phrase), [])
+  const onApparentAge = useCallback((phrase: string) => setApparentAge(phrase), [])
+  const photoExtra = joinIdentity(apparentAge, skin)
 
   const startEdit = useCallback(async (slug: string, heading: string) => {
     const r = await window.terrarium.characters.get(slug)
@@ -125,7 +129,7 @@ export function BotBuilderScreen() {
     setGenning(true)
     setPortraitNote(null)
     const r = await window.terrarium.portraits.generate({
-      identity: joinIdentity(f.photoIdentity, skin),
+      identity: joinIdentity(f.photoIdentity, photoExtra),
       outfit: f.photoOutfit,
       shot: f.photoShot,
     })
@@ -214,7 +218,7 @@ export function BotBuilderScreen() {
     setPreview(null)
     setNote(null)
   }
-  const spec = buildSpec(f, skin)
+  const spec = buildSpec(f, photoExtra)
   const slug = spec.slug
 
   const doPreview = async () => {
@@ -372,6 +376,11 @@ export function BotBuilderScreen() {
         {T('Identity', 'photoIdentity', 'woman, 22, silver hair, athletic', 'structured — no age-coded terms', 'photoIdentity')}
         {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck', undefined, 'photoOutfit')}
         {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight', undefined, 'photoShot')}
+
+        <label className="bb-field">
+          <span className="bb-label">Apparent age (adult)</span>
+          <ApparentAge onChange={onApparentAge} />
+        </label>
 
         <label className="bb-field">
           <span className="bb-label">Skin & detail</span>
