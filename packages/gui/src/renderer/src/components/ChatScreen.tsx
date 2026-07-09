@@ -45,6 +45,11 @@ function personaSlugAt(messages: ChatMsg[], idx: number): string | null {
 const personaName = (slug: string | null, names: Record<string, string>, fallback: string): string =>
   slug ? names[slug] ?? titleCase(slug) : fallback
 
+// Roster cards read "Display — Real Name (age)"; the /be slug + face come from the
+// SHORT display name (e.g. "Linh — Nguyễn Thị Linh" -> "Linh" -> "linh").
+const shortName = (name: string): string => name.split(/\s[—–-]\s/)[0]!.trim()
+const rosterSlug = (name: string): string => deriveSlug(shortName(name))
+
 // The bot's disc: her chosen face (characters/refs/<slug>.png, served over
 // terrarium://ref/) when she has one, else the first-letter fallback. When onZoom is
 // given and a real face is showing, clicking enlarges it.
@@ -89,6 +94,7 @@ export function ChatScreen({
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [names, setNames] = useState<Record<string, string>>({})
+  const [roster, setRoster] = useState<{ slug: string; name: string }[]>([])
   // Every photo in the log, in order, so the lightbox can arrow through them all.
   const allImages = useMemo(() => messages.flatMap((m) => m.images ?? []), [messages])
   const [zoomIdx, setZoomIdx] = useState<number | null>(null)
@@ -111,8 +117,9 @@ export function ChatScreen({
       .then((r) => {
         if (!alive) return
         const map: Record<string, string> = {}
-        for (const c of r.cards) map[deriveSlug(c.name)] = c.name
+        for (const c of r.cards) map[rosterSlug(c.name)] = shortName(c.name)
         setNames(map)
+        setRoster(r.cards.map((c) => ({ slug: rosterSlug(c.name), name: shortName(c.name) })))
       })
       .catch(() => {})
     return () => {
@@ -145,7 +152,30 @@ export function ChatScreen({
   })
 
   return (
-    <div className="chat">
+    <div className="chat-shell">
+      <aside className="chat-roster">
+        <span className="chat-roster-head">Characters</span>
+        <div className="chat-roster-list">
+          {roster.length === 0 && <span className="chat-roster-empty">No characters yet.</span>}
+          {roster.map((c) => (
+            <button
+              key={c.slug}
+              type="button"
+              className={`chat-roster-item ${activeSlug === c.slug ? 'active' : ''}`}
+              disabled={!connected}
+              title={`Switch to ${c.name} (/be ${c.slug})`}
+              onClick={() => send(`/be ${c.slug}`)}
+            >
+              <span className="chat-roster-face">
+                <BotAvatar name={c.name} slug={c.slug} />
+              </span>
+              <span className="chat-roster-name">{c.name}</span>
+            </button>
+          ))}
+        </div>
+      </aside>
+
+      <div className="chat">
       <div className="chat-head">
         <span className="chat-title">Chat with {activeName}</span>
         <span className={`chat-conn ${connected ? 'on' : status.state === 'error' ? 'err' : ''}`}>
@@ -281,6 +311,7 @@ export function ChatScreen({
         onPrev={stripActive && zoomIdx! > 0 ? () => setZoomIdx(zoomIdx! - 1) : undefined}
         onNext={stripActive && zoomIdx! < allImages.length - 1 ? () => setZoomIdx(zoomIdx! + 1) : undefined}
       />
+      </div>
     </div>
   )
 }

@@ -748,10 +748,91 @@
 }
 
 /* ---------- chat ---------- */
+.chat-shell {
+  height: 100%;
+  display: flex;
+  min-height: 0;
+}
 .chat {
+  flex: 1;
+  min-width: 0;
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+/* character switcher rail — click a face to /be them (one brain, many personas) */
+.chat-roster {
+  flex: none;
+  width: 156px;
+  border-right: 1px solid var(--edge);
+  background: var(--bg-2);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 0.7rem 0.55rem;
+  gap: 0.3rem;
+}
+.chat-roster-head {
+  font: 600 0.64rem/1 var(--f-ui);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding: 0.2rem 0.35rem 0.4rem;
+}
+.chat-roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.chat-roster-empty {
+  font: 500 0.76rem/1.4 var(--f-ui);
+  color: var(--ink-faint);
+  padding: 0.2rem 0.35rem;
+}
+.chat-roster-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.32rem 0.4rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.14s, border-color 0.14s;
+}
+.chat-roster-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+.chat-roster-item.active {
+  background: var(--glow);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--edge));
+}
+.chat-roster-item:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.chat-roster-face {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(120% 120% at 30% 20%, var(--accent), color-mix(in srgb, var(--accent) 55%, #000));
+  color: var(--accent-ink);
+  font: 600 0.78rem/1 var(--f-display);
+}
+.chat-roster-name {
+  font: 600 0.82rem/1.1 var(--f-ui);
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-roster-item.active .chat-roster-name {
+  color: var(--accent);
 }
 .chat-head {
   display: flex;
@@ -892,29 +973,25 @@
   border-bottom-left-radius: 5px;
 }
 
-/* Speech-bubble beak on the first bubble of a run, on the avatar side. A small square
-   rotated 45° and tucked BEHIND the bubble so only the outer corner pokes out — the
-   bubble's own fill hides the inner half, giving a clean tail with matching border. */
+/* Speech-bubble beak on the first bubble of a run, on the avatar side. A clip-path
+   triangle drawn OVER the background just outside the bubble corner — no z-index games,
+   always visible. */
 .msg-row.run-start .bubble:not(.caption):not(.typing)::before {
   content: '';
   position: absolute;
-  bottom: 4px;
-  width: 12px;
-  height: 12px;
-  transform: rotate(45deg);
-  z-index: -1;
+  bottom: 0;
+  width: 11px;
+  height: 15px;
 }
 .msg-row.assistant.run-start .bubble:not(.caption):not(.typing)::before {
-  left: -4px;
-  background: color-mix(in srgb, var(--accent-2) 10%, var(--surface));
-  border-left: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--edge));
-  border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--edge));
-  border-bottom-left-radius: 3px;
+  left: -7px;
+  background: color-mix(in srgb, var(--accent-2) 12%, var(--surface));
+  clip-path: polygon(100% 0, 100% 100%, 0 100%);
 }
 .msg-row.user.run-start .bubble:not(.caption):not(.typing)::before {
-  right: -4px;
+  right: -7px;
   background: var(--accent);
-  border-bottom-right-radius: 3px;
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
 }
 /* ---- image bubbles (M8c: pics in chat) ---- */
 .msg-media {
