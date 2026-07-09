@@ -172,3 +172,12 @@ export function resolvePortraitImage(name: string): string | null {
   if (!existsSync(abs)) return null
   return abs
 }
+
+/** Resolve terrarium://ref/<slug>[.png] to a character's chosen face, or null if none. */
+export function resolveRefImage(name: string): string | null {
+  const clean = decodeURIComponent(name).replace(/^\/+/, '').replace(/\.png$/i, '')
+  if (!/^[a-z0-9-]+$/i.test(clean)) return null // slugs only — no separators/traversal
+  const abs = join(REFS_DIR, `${clean}.png`)
+  if (!existsSync(abs)) return null
+  return abs
+}

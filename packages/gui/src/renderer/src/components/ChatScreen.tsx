@@ -31,18 +31,31 @@ function lastPersonaSlug(messages: ChatMsg[]): string | null {
 }
 const titleCase = (s: string) => s.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
 
-/** Who was replying at message `idx` — the persona from the most recent prior /be. */
-function personaAt(messages: ChatMsg[], idx: number, names: Record<string, string>, fallback: string): string {
+/** Slug of the persona replying at message `idx` — from the most recent prior /be. */
+function personaSlugAt(messages: ChatMsg[], idx: number): string | null {
   for (let i = idx; i >= 0; i--) {
     const m = messages[i]!
     if (m.role !== 'user') continue
     const hit = BE_RE.exec(m.text.trim())
-    if (hit) {
-      const slug = hit[1]!.toLowerCase()
-      return names[slug] ?? titleCase(slug)
-    }
+    if (hit) return hit[1]!.toLowerCase()
   }
-  return fallback
+  return null
+}
+
+const personaName = (slug: string | null, names: Record<string, string>, fallback: string): string =>
+  slug ? names[slug] ?? titleCase(slug) : fallback
+
+// The bot's disc: her chosen face (characters/refs/<slug>.png, served over
+// terrarium://ref/) when she has one, else the first-letter fallback.
+function BotAvatar({ name, slug }: { name: string; slug: string | null }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [slug])
+  if (slug && !failed) {
+    return (
+      <img className="msg-avatar-img" src={`terrarium://ref/${slug}.png`} alt="" onError={() => setFailed(true)} />
+    )
+  }
+  return <>{name.charAt(0).toUpperCase()}</>
 }
 
 const UserGlyph = () => (
@@ -77,8 +90,7 @@ export function ChatScreen({
 
   // Resolve the active persona: slug from the last /be, display name from the roster.
   const activeSlug = lastPersonaSlug(messages)
-  const activeName = activeSlug ? names[activeSlug] ?? titleCase(activeSlug) : botName
-  const botInitial = activeName.charAt(0).toUpperCase()
+  const activeName = personaName(activeSlug, names, botName)
 
   // Load the roster once so a /be slug can show its proper display name.
   useEffect(() => {
@@ -141,11 +153,12 @@ export function ChatScreen({
         {messages.map((m, i) => {
           const prev = messages[i - 1]
           const runStart = !prev || prev.role !== m.role
-          const who = m.role === 'assistant' ? personaAt(messages, i, names, botName) : 'You'
+          const slug = m.role === 'assistant' ? personaSlugAt(messages, i) : null
+          const who = m.role === 'assistant' ? personaName(slug, names, botName) : 'You'
           return (
             <div className={`msg-row ${m.role} ${runStart ? 'run-start' : ''}`} key={i}>
               <div className="msg-avatar" aria-hidden="true">
-                {m.role === 'assistant' ? who.charAt(0).toUpperCase() : <UserGlyph />}
+                {m.role === 'assistant' ? <BotAvatar name={who} slug={slug} /> : <UserGlyph />}
               </div>
               <div className="msg-col">
                 {runStart && <span className="msg-name">{who}</span>}
@@ -195,7 +208,7 @@ export function ChatScreen({
         {status.state === 'sending' && (
           <div className="msg-row assistant run-start" aria-label={`${activeName} is typing`}>
             <div className="msg-avatar" aria-hidden="true">
-              {botInitial}
+              <BotAvatar name={activeName} slug={activeSlug} />
             </div>
             <div className="msg-col">
               <div className="bubble typing">
@@ -228,7 +241,11 @@ export function ChatScreen({
           aria-hidden="true"
           title={`${activeName} is watching`}
         >
-          {botInitial}
+          {activeSlug ? (
+            <BotAvatar name={activeName} slug={activeSlug} />
+          ) : (
+            activeName.charAt(0).toUpperCase()
+          )}
         </span>
         <input
           ref={inputRef}

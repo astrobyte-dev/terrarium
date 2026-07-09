@@ -9,7 +9,7 @@ import { setupBots } from './bots'
 import { setupCharacters } from './characters'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
-import { resolvePortraitImage, setupPortraits } from './portraits'
+import { resolvePortraitImage, resolveRefImage, setupPortraits } from './portraits'
 
 // A packaged tray app has no console — boot milestones and crashes go to
 // %LOCALAPPDATA%\Terrarium\gui-boot.log so failures are diagnosable at all.
@@ -123,11 +123,17 @@ app.whenReady().then(() => {
   if (!isPrimaryInstance) return // quitting — never spawn a duplicate supervisor
   bootlog('ready')
 
-  // terrarium://inbox|portraits/<file> -> a scoped, traversal-guarded file on disk.
+  // terrarium://inbox|portraits|ref/<file> -> a scoped, traversal-guarded file on disk.
   protocol.handle('terrarium', (request) => {
     const { host, pathname } = new URL(request.url)
     const abs =
-      host === 'inbox' ? resolveInboxImage(pathname) : host === 'portraits' ? resolvePortraitImage(pathname) : null
+      host === 'inbox'
+        ? resolveInboxImage(pathname)
+        : host === 'portraits'
+          ? resolvePortraitImage(pathname)
+          : host === 'ref'
+            ? resolveRefImage(pathname)
+            : null
     if (!abs) return new Response('not found', { status: 404 })
     return net.fetch(pathToFileURL(abs).toString())
   })
