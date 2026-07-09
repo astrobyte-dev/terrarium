@@ -823,6 +823,13 @@
   object-fit: cover;
   display: block;
 }
+.msg-avatar-img.zoomable {
+  cursor: zoom-in;
+  transition: filter 0.14s;
+}
+.msg-avatar:hover .msg-avatar-img.zoomable {
+  filter: brightness(1.12);
+}
 .msg-avatar svg {
   width: 16px;
   height: 16px;
@@ -861,9 +868,10 @@
   padding: 0 0.25rem;
 }
 .bubble {
+  position: relative;
   max-width: 100%;
   padding: 0.62rem 0.85rem;
-  border-radius: 15px;
+  border-radius: 16px;
   font-size: 0.92rem;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -882,6 +890,31 @@
   border: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--edge));
   color: var(--ink);
   border-bottom-left-radius: 5px;
+}
+
+/* Speech-bubble beak on the first bubble of a run, on the avatar side. A small square
+   rotated 45° and tucked BEHIND the bubble so only the outer corner pokes out — the
+   bubble's own fill hides the inner half, giving a clean tail with matching border. */
+.msg-row.run-start .bubble:not(.caption):not(.typing)::before {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  z-index: -1;
+}
+.msg-row.assistant.run-start .bubble:not(.caption):not(.typing)::before {
+  left: -4px;
+  background: color-mix(in srgb, var(--accent-2) 10%, var(--surface));
+  border-left: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--edge));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent-2) 22%, var(--edge));
+  border-bottom-left-radius: 3px;
+}
+.msg-row.user.run-start .bubble:not(.caption):not(.typing)::before {
+  right: -4px;
+  background: var(--accent);
+  border-bottom-right-radius: 3px;
 }
 /* ---- image bubbles (M8c: pics in chat) ---- */
 .msg-media {

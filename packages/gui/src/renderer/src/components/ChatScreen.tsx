@@ -46,13 +46,21 @@ const personaName = (slug: string | null, names: Record<string, string>, fallbac
   slug ? names[slug] ?? titleCase(slug) : fallback
 
 // The bot's disc: her chosen face (characters/refs/<slug>.png, served over
-// terrarium://ref/) when she has one, else the first-letter fallback.
-function BotAvatar({ name, slug }: { name: string; slug: string | null }) {
+// terrarium://ref/) when she has one, else the first-letter fallback. When onZoom is
+// given and a real face is showing, clicking enlarges it.
+function BotAvatar({ name, slug, onZoom }: { name: string; slug: string | null; onZoom?: (src: string) => void }) {
   const [failed, setFailed] = useState(false)
   useEffect(() => setFailed(false), [slug])
   if (slug && !failed) {
+    const src = `terrarium://ref/${slug}.png`
     return (
-      <img className="msg-avatar-img" src={`terrarium://ref/${slug}.png`} alt="" onError={() => setFailed(true)} />
+      <img
+        className={`msg-avatar-img ${onZoom ? 'zoomable' : ''}`}
+        src={src}
+        alt=""
+        onError={() => setFailed(true)}
+        onClick={onZoom ? () => onZoom(src) : undefined}
+      />
     )
   }
   return <>{name.charAt(0).toUpperCase()}</>
@@ -84,7 +92,10 @@ export function ChatScreen({
   // Every photo in the log, in order, so the lightbox can arrow through them all.
   const allImages = useMemo(() => messages.flatMap((m) => m.images ?? []), [messages])
   const [zoomIdx, setZoomIdx] = useState<number | null>(null)
-  const zoomSrc = zoomIdx != null ? allImages[zoomIdx] ?? null : null
+  const [faceZoom, setFaceZoom] = useState<string | null>(null)
+  const stripSrc = zoomIdx != null ? allImages[zoomIdx] ?? null : null
+  const zoomSrc = faceZoom ?? stripSrc // a face has no prev/next; the photo strip does
+  const stripActive = faceZoom == null && zoomIdx != null
   const endRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -158,7 +169,7 @@ export function ChatScreen({
           return (
             <div className={`msg-row ${m.role} ${runStart ? 'run-start' : ''}`} key={i}>
               <div className="msg-avatar" aria-hidden="true">
-                {m.role === 'assistant' ? <BotAvatar name={who} slug={slug} /> : <UserGlyph />}
+                {m.role === 'assistant' ? <BotAvatar name={who} slug={slug} onZoom={setFaceZoom} /> : <UserGlyph />}
               </div>
               <div className="msg-col">
                 {runStart && <span className="msg-name">{who}</span>}
@@ -263,9 +274,12 @@ export function ChatScreen({
       <Lightbox
         src={zoomSrc}
         alt="chat photo"
-        onClose={() => setZoomIdx(null)}
-        onPrev={zoomIdx != null && zoomIdx > 0 ? () => setZoomIdx(zoomIdx - 1) : undefined}
-        onNext={zoomIdx != null && zoomIdx < allImages.length - 1 ? () => setZoomIdx(zoomIdx + 1) : undefined}
+        onClose={() => {
+          setZoomIdx(null)
+          setFaceZoom(null)
+        }}
+        onPrev={stripActive && zoomIdx! > 0 ? () => setZoomIdx(zoomIdx! - 1) : undefined}
+        onNext={stripActive && zoomIdx! < allImages.length - 1 ? () => setZoomIdx(zoomIdx! + 1) : undefined}
       />
     </div>
   )
