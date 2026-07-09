@@ -1395,6 +1395,34 @@
   border-color: color-mix(in srgb, var(--accent) 40%, var(--edge));
   color: var(--ink);
 }
+/* per-field re-roll die */
+.bb-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.bb-dice {
+  flex: none;
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  line-height: 1;
+  padding: 0.16rem 0.4rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color 0.14s, border-color 0.14s, background 0.14s;
+}
+.bb-dice:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--edge));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+}
+.bb-dice:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
 
 .bb-preview {
   border-left: 1px solid var(--edge);

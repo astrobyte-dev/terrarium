@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { BotPreview, BotSpecInput } from '../data/types'
+import type { BotPreview, BotSpecInput, DraftFieldKey } from '../data/types'
 
 interface Form {
   displayName: string
@@ -63,6 +63,34 @@ export function BotBuilderScreen() {
   const [mode, setMode] = useState<'sfw' | 'nsfw'>('sfw')
   const [drafting, setDrafting] = useState(false)
   const [draftNote, setDraftNote] = useState<{ ok: boolean; text: string } | null>(null)
+  const [rerolling, setRerolling] = useState<DraftFieldKey | null>(null)
+
+  // Re-roll one field from the name + concept, leaving the rest of the form alone.
+  const rerollField = async (k: DraftFieldKey) => {
+    const name = f.displayName.trim()
+    const idea = concept.trim()
+    if (!name || !idea) {
+      setDraftNote({ ok: false, text: 'add a display name and a concept up top, then you can re-roll any field' })
+      return
+    }
+    setRerolling(k)
+    try {
+      const r = await window.terrarium.bots.draftField(
+        { displayName: name, age: Number.parseInt(f.age, 10) || 18, concept: idea, mode },
+        k,
+      )
+      if (r.ok && r.value !== undefined) {
+        setF((prev) => ({ ...prev, [k]: Array.isArray(r.value) ? r.value.join('\n') : (r.value as string) }))
+        setPreview(null)
+      } else {
+        setDraftNote({ ok: false, text: r.error ?? 're-roll failed' })
+      }
+    } catch (e) {
+      setDraftNote({ ok: false, text: `re-roll failed: ${e instanceof Error ? e.message : String(e)}` })
+    } finally {
+      setRerolling(null)
+    }
+  }
 
   const doDraft = async () => {
     const name = f.displayName.trim()
@@ -145,16 +173,36 @@ export function BotBuilderScreen() {
   const canCreate = spec.displayName.trim() !== '' && !busy
   const pct = preview ? Math.min(100, Math.round((preview.resultChars / 11800) * 100)) : 0
 
-  const T = (label: string, k: keyof Form, ph: string, hint?: string) => (
-    <label className="bb-field">
+  // The little re-roll die shown on AI-draftable fields (ai = the DraftFieldKey).
+  const Dice = ({ ai }: { ai?: DraftFieldKey }) =>
+    ai ? (
+      <button
+        type="button"
+        className="bb-dice"
+        title="Re-roll just this field"
+        aria-label={`Re-roll ${ai}`}
+        disabled={rerolling !== null}
+        onClick={() => void rerollField(ai)}
+      >
+        {rerolling === ai ? '…' : '🎲'}
+      </button>
+    ) : null
+  const Label = ({ label, ai }: { label: string; ai?: DraftFieldKey }) => (
+    <span className="bb-label-row">
       <span className="bb-label">{label}</span>
+      <Dice ai={ai} />
+    </span>
+  )
+  const T = (label: string, k: keyof Form, ph: string, hint?: string, ai?: DraftFieldKey) => (
+    <label className="bb-field">
+      <Label label={label} ai={ai} />
       <input value={f[k]} onChange={set(k)} placeholder={ph} />
       {hint && <span className="bb-hint">{hint}</span>}
     </label>
   )
-  const A = (label: string, k: keyof Form, ph: string, hint?: string, rows = 2) => (
+  const A = (label: string, k: keyof Form, ph: string, hint?: string, rows = 2, ai?: DraftFieldKey) => (
     <label className="bb-field">
-      <span className="bb-label">{label}</span>
+      <Label label={label} ai={ai} />
       <textarea rows={rows} value={f[k]} onChange={set(k)} placeholder={ph} />
       {hint && <span className="bb-hint">{hint}</span>}
     </label>
@@ -208,21 +256,21 @@ export function BotBuilderScreen() {
         </div>
 
         <div className="bb-section">Personality</div>
-        {A('Look', 'look', 'tall, silver-dyed hair, dark eyes, athletic build…')}
-        {A('Vibe', 'vibe', 'dry-witted night-owl DJ, teasing but warm underneath…')}
-        {T('Loves', 'loves', 'vinyl crates, synthwave, 3am food runs')}
-        {A('Relationship', 'relationship', 'how she knows Corey / the dynamic')}
-        {A('Backstory', 'backstory', 'a few lines of history')}
+        {A('Look', 'look', 'tall, silver-dyed hair, dark eyes, athletic build…', undefined, 2, 'look')}
+        {A('Vibe', 'vibe', 'dry-witted night-owl DJ, teasing but warm underneath…', undefined, 2, 'vibe')}
+        {T('Loves', 'loves', 'vinyl crates, synthwave, 3am food runs', undefined, 'loves')}
+        {A('Relationship', 'relationship', 'how she knows Corey / the dynamic', undefined, 2, 'relationship')}
+        {A('Backstory', 'backstory', 'a few lines of history', undefined, 2, 'backstory')}
 
         <div className="bb-section">Voice</div>
-        {A('Speech style', 'speechStyle', 'one bullet per line\nlowercase, dry one-liners\nmusic references everywhere', 'one per line', 3)}
-        {A('Opener ideas', 'openerIdeas', 'one per line\njust finished a set and is wired\nfound a record he would love', 'one per line', 3)}
+        {A('Speech style', 'speechStyle', 'one bullet per line\nlowercase, dry one-liners\nmusic references everywhere', 'one per line', 3, 'speechStyle')}
+        {A('Opener ideas', 'openerIdeas', 'one per line\njust finished a set and is wired\nfound a record he would love', 'one per line', 3, 'openerIdeas')}
         {A('Hard rules', 'hardRules', 'optional — one per line\nteases but never mean', 'optional, one per line', 2)}
 
         <div className="bb-section">Photo pipeline</div>
-        {T('Identity', 'photoIdentity', 'woman, 22, silver hair, athletic', 'structured — no age-coded terms')}
-        {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck')}
-        {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight')}
+        {T('Identity', 'photoIdentity', 'woman, 22, silver hair, athletic', 'structured — no age-coded terms', 'photoIdentity')}
+        {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck', undefined, 'photoOutfit')}
+        {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight', undefined, 'photoShot')}
 
         <div className="bb-actions">
           <button className="bb-check" type="button" disabled={busy} onClick={() => void doPreview()}>

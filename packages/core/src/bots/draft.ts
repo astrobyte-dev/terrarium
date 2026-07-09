@@ -123,3 +123,54 @@ export function parseDraft(raw: string): DraftedPersona {
 export async function draftPersona(seed: DraftSeed, chat: (prompt: string) => Promise<string>): Promise<DraftedPersona> {
   return parseDraft(await chat(buildDraftPrompt(seed)))
 }
+
+// --- per-field re-roll (the little dice button on each section) ---
+
+export type DraftField =
+  | 'look'
+  | 'vibe'
+  | 'loves'
+  | 'relationship'
+  | 'backstory'
+  | 'speechStyle'
+  | 'openerIdeas'
+  | 'photoIdentity'
+  | 'photoOutfit'
+  | 'photoShot'
+
+const FIELD_SPEC: Record<DraftField, { label: string; array: boolean; photo: boolean }> = {
+  look: { label: 'a short physical description INCLUDING her ethnicity (comma phrases)', array: false, photo: false },
+  vibe: { label: 'her personality in a short phrase', array: false, photo: false },
+  loves: { label: 'a few things she loves (comma list)', array: false, photo: false },
+  relationship: { label: 'her relationship to the user (e.g. "your girlfriend")', array: false, photo: false },
+  backstory: { label: 'a fresh 1-2 sentence backstory', array: false, photo: false },
+  speechStyle: { label: '2-4 short bullets on how she talks', array: true, photo: false },
+  openerIdeas: { label: '2-3 short opening text messages she might send', array: true, photo: false },
+  photoIdentity: { label: 'her ethnicity + adult face/body descriptors including the age', array: false, photo: true },
+  photoOutfit: { label: 'her default outfit', array: false, photo: true },
+  photoShot: { label: 'a camera framing / pose for her photo', array: false, photo: true },
+}
+
+export function buildFieldPrompt(seed: DraftSeed, field: DraftField): string {
+  const spec = FIELD_SPEC[field]
+  const tone = seed.mode === 'nsfw' ? 'She is an adult companion (NSFW) — flirty/explicit is fine.' : 'Keep it wholesome (SFW).'
+  return [
+    `Adult companion "${seed.displayName}", age ${seed.age}. Concept: ${seed.concept}.`,
+    tone,
+    `She is an ADULT (${seed.age}) — never any age-coded or youth-suggesting words${spec.photo ? ', especially here' : ''}.`,
+    `Give ONE fresh option for: ${spec.label}.`,
+    `Output ONLY JSON: {"value": ${spec.array ? '["...", "..."]' : '"..."'}}`,
+  ].join('\n')
+}
+
+/** Re-roll a single field. Returns a string, or a string[] for speechStyle/openerIdeas. */
+export async function draftField(
+  seed: DraftSeed,
+  field: DraftField,
+  chat: (prompt: string) => Promise<string>,
+): Promise<string | string[]> {
+  const spec = FIELD_SPEC[field]
+  const obj = JSON.parse(extractJsonObject(await chat(buildFieldPrompt(seed, field)))) as { value?: unknown }
+  if (spec.array) return toLines(obj.value)
+  return spec.photo ? scrub(obj.value) : text(obj.value)
+}

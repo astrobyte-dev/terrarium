@@ -3,12 +3,22 @@ import {
   createBot,
   createOllamaChat,
   createWindowsSystem,
+  draftField,
   draftPersona,
   renderCompactCard,
   type BotSpec,
+  type DraftField,
   type DraftSeed,
 } from '@terrarium/core'
-import type { BotCreateResult, BotPreview, BotSpecInput, DraftResult, DraftSeedInput } from '../shared/contract'
+import type {
+  BotCreateResult,
+  BotPreview,
+  BotSpecInput,
+  DraftFieldKey,
+  DraftFieldResult,
+  DraftResult,
+  DraftSeedInput,
+} from '../shared/contract'
 
 // The renderer sends a plain object; core's BotSpec has the same shape.
 const toSpec = (input: BotSpecInput): BotSpec => input
@@ -51,6 +61,17 @@ export function setupBots(): void {
       const chat = createOllamaChat({ format: 'json' })
       const persona = await draftPersona(seed as DraftSeed, chat)
       return { ok: true, persona }
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) }
+    }
+  })
+
+  // Re-roll a single field (the per-section dice button).
+  ipcMain.handle('bots:draftField', async (_e, seed: DraftSeedInput, field: DraftFieldKey): Promise<DraftFieldResult> => {
+    try {
+      const chat = createOllamaChat({ format: 'json' })
+      const value = await draftField(seed as DraftSeed, field as DraftField, chat)
+      return { ok: true, value }
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) }
     }

@@ -44,7 +44,17 @@ export { trafficLight, type Hardware, type Light, type TrafficOptions } from './
 export { resolveBrainChoice, resolveFallbacks, type BrainChoice } from './catalog/brain'
 export { readBrainSelection, writeBrainSelection, type StoredBrain } from './catalog/brain-store'
 export { validateBotSpec, type BotSpec } from './bots/spec'
-export { buildDraftPrompt, parseDraft, draftPersona, type DraftSeed, type DraftMode, type DraftedPersona } from './bots/draft'
+export {
+  buildDraftPrompt,
+  buildFieldPrompt,
+  parseDraft,
+  draftPersona,
+  draftField,
+  type DraftSeed,
+  type DraftMode,
+  type DraftedPersona,
+  type DraftField,
+} from './bots/draft'
 export { createOllamaChat, DEFAULT_DRAFT_MODEL, type OllamaChatOptions } from './bots/ollama-chat'
 export { renderCompactCard, renderFullCard } from './bots/render'
 export { AGENTS_LIMIT, SAFETY_MARGIN, planInsert, insertCompactCard, type InsertPlan } from './bots/agents-file'

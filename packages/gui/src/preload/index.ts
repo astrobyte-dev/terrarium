@@ -14,6 +14,8 @@ import type {
   CoreState,
   DoctorReportView,
   DoctorRepairResult,
+  DraftFieldKey,
+  DraftFieldResult,
   DraftResult,
   DraftSeedInput,
   LogLine,
@@ -62,6 +64,8 @@ const api = {
     preview: (spec: BotSpecInput): Promise<BotPreview> => ipcRenderer.invoke('bots:preview', spec),
     create: (spec: BotSpecInput): Promise<BotCreateResult> => ipcRenderer.invoke('bots:create', spec),
     draft: (seed: DraftSeedInput): Promise<DraftResult> => ipcRenderer.invoke('bots:draft', seed),
+    draftField: (seed: DraftSeedInput, field: DraftFieldKey): Promise<DraftFieldResult> =>
+      ipcRenderer.invoke('bots:draftField', seed, field),
   },
   doctor: {
     report: (): Promise<DoctorReportView> => ipcRenderer.invoke('doctor:report'),

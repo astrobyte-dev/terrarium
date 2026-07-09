@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDraftPrompt, parseDraft, draftPersona, type DraftSeed } from './draft'
+import { buildDraftPrompt, buildFieldPrompt, parseDraft, draftPersona, draftField, type DraftSeed } from './draft'
 
 const SEED: DraftSeed = { displayName: 'Nova', age: 24, concept: 'flirty australian DJ', mode: 'nsfw' }
 
@@ -96,5 +96,31 @@ describe('draftPersona', () => {
     const d = await draftPersona(SEED, chat)
     expect(seenPrompt).toContain('Nova')
     expect(d.loves).toContain('salt water')
+  })
+})
+
+describe('draftField', () => {
+  it('returns a string for a text field', async () => {
+    const chat = async () => '{"value":"warm and teasing"}'
+    expect(await draftField(SEED, 'vibe', chat)).toBe('warm and teasing')
+  })
+
+  it('returns a string[] for speechStyle/openerIdeas', async () => {
+    const chat = async () => '{"value":["short lowercase texts","lots of emoji"]}'
+    expect(await draftField(SEED, 'speechStyle', chat)).toEqual(['short lowercase texts', 'lots of emoji'])
+  })
+
+  it('scrubs age-coded terms from a photo field', async () => {
+    const chat = async () => '{"value":"teen schoolgirl, petite"}'
+    const v = await draftField(SEED, 'photoIdentity', chat)
+    expect(v).not.toMatch(/teen|schoolgirl/i)
+  })
+
+  it('buildFieldPrompt names the field and pins the 18+ floor', () => {
+    const p = buildFieldPrompt(SEED, 'backstory')
+    expect(p).toContain('Nova')
+    expect(p).toMatch(/backstory/i)
+    expect(p).toMatch(/adult|age-coded|never/i)
+    expect(p).toMatch(/json/i)
   })
 })

@@ -14,6 +14,8 @@ import type {
   CoreState,
   DoctorReportView,
   DoctorRepairResult,
+  DraftFieldKey,
+  DraftFieldResult,
   DraftResult,
   DraftSeedInput,
   LogLine,
@@ -54,6 +56,7 @@ declare global {
         preview: (spec: BotSpecInput) => Promise<BotPreview>
         create: (spec: BotSpecInput) => Promise<BotCreateResult>
         draft: (seed: DraftSeedInput) => Promise<DraftResult>
+        draftField: (seed: DraftSeedInput, field: DraftFieldKey) => Promise<DraftFieldResult>
       }
       doctor: {
         report: () => Promise<DoctorReportView>

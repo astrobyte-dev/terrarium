@@ -155,6 +155,22 @@ export interface DraftResult {
   error?: string
   persona?: DraftedPersonaView
 }
+export type DraftFieldKey =
+  | 'look'
+  | 'vibe'
+  | 'loves'
+  | 'relationship'
+  | 'backstory'
+  | 'speechStyle'
+  | 'openerIdeas'
+  | 'photoIdentity'
+  | 'photoOutfit'
+  | 'photoShot'
+export interface DraftFieldResult {
+  ok: boolean
+  value?: string | string[]
+  error?: string
+}
 
 // ---- brains (swap the primary model, edited in-place in openclaw.json) ----
 export interface BrainOpt {
