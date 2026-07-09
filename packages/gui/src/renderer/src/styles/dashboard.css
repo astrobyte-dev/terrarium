@@ -1352,6 +1352,22 @@
   opacity: 0.55;
   cursor: progress;
 }
+.bb-draft-note {
+  font: 500 0.78rem/1.45 var(--f-ui);
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--edge-strong);
+  background: var(--surface);
+  color: var(--ink-soft);
+}
+.bb-draft-note.err {
+  border-color: var(--crit);
+  color: var(--crit);
+}
+.bb-draft-note.ok {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--edge));
+  color: var(--ink);
+}
 
 .bb-preview {
   border-left: 1px solid var(--edge);

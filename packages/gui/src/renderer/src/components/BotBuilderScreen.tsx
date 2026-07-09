@@ -62,42 +62,53 @@ export function BotBuilderScreen() {
   const [concept, setConcept] = useState('')
   const [mode, setMode] = useState<'sfw' | 'nsfw'>('sfw')
   const [drafting, setDrafting] = useState(false)
+  const [draftNote, setDraftNote] = useState<{ ok: boolean; text: string } | null>(null)
 
   const doDraft = async () => {
     const name = f.displayName.trim()
     const idea = concept.trim()
-    if (!name || !idea) {
-      setNote({ ok: false, text: 'add a display name and a concept first' })
+    if (!name) {
+      setDraftNote({ ok: false, text: 'Add a display name up top first.' })
+      return
+    }
+    if (!idea) {
+      setDraftNote({ ok: false, text: 'Type a concept first — a one-line idea (e.g. “flirty australian DJ who loves late sets”).' })
       return
     }
     setDrafting(true)
-    setNote(null)
-    const r = await window.terrarium.bots.draft({
-      displayName: name,
-      age: Number.parseInt(f.age, 10) || 18,
-      concept: idea,
-      mode,
-    })
-    setDrafting(false)
-    if (r.ok && r.persona) {
-      const p = r.persona
-      setF((prev) => ({
-        ...prev,
-        look: p.look,
-        vibe: p.vibe,
-        loves: p.loves,
-        relationship: p.relationship,
-        backstory: p.backstory,
-        speechStyle: p.speechStyle.join('\n'),
-        openerIdeas: p.openerIdeas.join('\n'),
-        photoIdentity: p.photo.identity,
-        photoOutfit: p.photo.outfit,
-        photoShot: p.photo.shot,
-      }))
-      setPreview(null)
-      setNote({ ok: true, text: 'Drafted — review and tweak anything, then Preview / check.' })
-    } else {
-      setNote({ ok: false, text: r.error ?? 'draft failed — is Ollama running?' })
+    setDraftNote({ ok: true, text: `Drafting ${name}… a local model runs this, so give it ~10–30s.` })
+    try {
+      const r = await window.terrarium.bots.draft({
+        displayName: name,
+        age: Number.parseInt(f.age, 10) || 18,
+        concept: idea,
+        mode,
+      })
+      if (r.ok && r.persona) {
+        const p = r.persona
+        setF((prev) => ({
+          ...prev,
+          look: p.look,
+          vibe: p.vibe,
+          loves: p.loves,
+          relationship: p.relationship,
+          backstory: p.backstory,
+          speechStyle: p.speechStyle.join('\n'),
+          openerIdeas: p.openerIdeas.join('\n'),
+          photoIdentity: p.photo.identity,
+          photoOutfit: p.photo.outfit,
+          photoShot: p.photo.shot,
+        }))
+        setPreview(null)
+        setNote(null)
+        setDraftNote({ ok: true, text: 'Drafted below — review and tweak anything, then Preview / check.' })
+      } else {
+        setDraftNote({ ok: false, text: r.error ?? 'Draft failed — is Ollama running?' })
+      }
+    } catch (e) {
+      setDraftNote({ ok: false, text: `Draft failed: ${e instanceof Error ? e.message : String(e)}` })
+    } finally {
+      setDrafting(false)
     }
   }
 
@@ -190,6 +201,7 @@ export function BotBuilderScreen() {
               {drafting ? 'Drafting…' : '✨ Draft with AI'}
             </button>
           </div>
+          {draftNote && <div className={`bb-draft-note ${draftNote.ok ? 'ok' : 'err'}`}>{draftNote.text}</div>}
         </div>
 
         <div className="bb-section">Personality</div>
