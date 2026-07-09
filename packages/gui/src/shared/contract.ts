@@ -105,6 +105,30 @@ export interface BotCreateResult {
   fullCardPath: string | null
 }
 
+// ---- bot builder: AI-assisted drafting (local model fills the personality) ----
+export type DraftMode = 'sfw' | 'nsfw'
+export interface DraftSeedInput {
+  displayName: string
+  age: number
+  concept: string
+  mode: DraftMode
+}
+export interface DraftedPersonaView {
+  look: string
+  vibe: string
+  loves: string
+  relationship: string
+  backstory: string
+  speechStyle: string[]
+  openerIdeas: string[]
+  photo: { identity: string; outfit: string; shot: string }
+}
+export interface DraftResult {
+  ok: boolean
+  error?: string
+  persona?: DraftedPersonaView
+}
+
 // ---- brains (swap the primary model, edited in-place in openclaw.json) ----
 export interface BrainOpt {
   ref: string // provider/id, e.g. arliai/Gemma-4-31B-DarkIdol

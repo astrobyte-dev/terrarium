@@ -59,6 +59,47 @@ export function BotBuilderScreen() {
   const [preview, setPreview] = useState<BotPreview | null>(null)
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
+  const [concept, setConcept] = useState('')
+  const [mode, setMode] = useState<'sfw' | 'nsfw'>('sfw')
+  const [drafting, setDrafting] = useState(false)
+
+  const doDraft = async () => {
+    const name = f.displayName.trim()
+    const idea = concept.trim()
+    if (!name || !idea) {
+      setNote({ ok: false, text: 'add a display name and a concept first' })
+      return
+    }
+    setDrafting(true)
+    setNote(null)
+    const r = await window.terrarium.bots.draft({
+      displayName: name,
+      age: Number.parseInt(f.age, 10) || 18,
+      concept: idea,
+      mode,
+    })
+    setDrafting(false)
+    if (r.ok && r.persona) {
+      const p = r.persona
+      setF((prev) => ({
+        ...prev,
+        look: p.look,
+        vibe: p.vibe,
+        loves: p.loves,
+        relationship: p.relationship,
+        backstory: p.backstory,
+        speechStyle: p.speechStyle.join('\n'),
+        openerIdeas: p.openerIdeas.join('\n'),
+        photoIdentity: p.photo.identity,
+        photoOutfit: p.photo.outfit,
+        photoShot: p.photo.shot,
+      }))
+      setPreview(null)
+      setNote({ ok: true, text: 'Drafted — review and tweak anything, then Preview / check.' })
+    } else {
+      setNote({ ok: false, text: r.error ?? 'draft failed — is Ollama running?' })
+    }
+  }
 
   const set = (k: keyof Form) => (e: { target: { value: string } }) => {
     setF((prev) => ({ ...prev, [k]: e.target.value }))
@@ -124,6 +165,32 @@ export function BotBuilderScreen() {
           <input type="number" min={18} value={f.age} onChange={set('age')} />
           <span className="bb-hint">must be 18 or older</span>
         </label>
+
+        <div className="bb-section">Draft with AI</div>
+        <div className="bb-ai">
+          <label className="bb-field">
+            <span className="bb-label">Concept</span>
+            <input
+              value={concept}
+              onChange={(e) => setConcept(e.target.value)}
+              placeholder="one line, e.g. “flirty australian DJ who loves late sets”"
+            />
+            <span className="bb-hint">a local model fills the personality below from the name + concept — you edit it, and the 18+ gate still runs on preview</span>
+          </label>
+          <div className="bb-ai-row">
+            <div className="bb-toggle" role="group" aria-label="Tone">
+              <button type="button" className={mode === 'sfw' ? 'on' : ''} onClick={() => setMode('sfw')}>
+                SFW
+              </button>
+              <button type="button" className={mode === 'nsfw' ? 'on' : ''} onClick={() => setMode('nsfw')}>
+                NSFW
+              </button>
+            </div>
+            <button className="bb-draft" type="button" disabled={drafting} onClick={() => void doDraft()}>
+              {drafting ? 'Drafting…' : '✨ Draft with AI'}
+            </button>
+          </div>
+        </div>
 
         <div className="bb-section">Personality</div>
         {A('Look', 'look', 'tall, silver-dyed hair, dark eyes, athletic build…')}

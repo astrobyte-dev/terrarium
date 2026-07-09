@@ -1276,6 +1276,63 @@
   cursor: not-allowed;
 }
 
+/* ---- bot builder: AI-assist block ---- */
+.bb-ai {
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--edge));
+  border-radius: var(--radius);
+  padding: 0.85rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+.bb-ai-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+}
+.bb-toggle {
+  display: inline-flex;
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.bb-toggle button {
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  font: 600 0.76rem/1 var(--f-ui);
+  padding: 0.5rem 0.85rem;
+  cursor: pointer;
+  transition: background 0.14s, color 0.14s;
+}
+.bb-toggle button + button {
+  border-left: 1px solid var(--edge-strong);
+}
+.bb-toggle button.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+.bb-draft {
+  margin-left: auto;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, var(--edge));
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  color: var(--accent);
+  font: 600 0.84rem/1 var(--f-ui);
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.14s, border-color 0.14s;
+}
+.bb-draft:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface));
+  border-color: var(--accent);
+}
+.bb-draft:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
 .bb-preview {
   border-left: 1px solid var(--edge);
   background: var(--bg-2);

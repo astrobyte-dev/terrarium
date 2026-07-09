@@ -12,6 +12,8 @@ import type {
   ChatStatus,
   CoreState,
   DoctorReportView,
+  DraftResult,
+  DraftSeedInput,
   LogLine,
   MetaView,
   ServiceView,
@@ -48,6 +50,7 @@ declare global {
       bots: {
         preview: (spec: BotSpecInput) => Promise<BotPreview>
         create: (spec: BotSpecInput) => Promise<BotCreateResult>
+        draft: (seed: DraftSeedInput) => Promise<DraftResult>
       }
       doctor: {
         report: () => Promise<DoctorReportView>

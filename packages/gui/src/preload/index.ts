@@ -12,6 +12,8 @@ import type {
   ChatStatus,
   CoreState,
   DoctorReportView,
+  DraftResult,
+  DraftSeedInput,
   LogLine,
   MetaView,
   ServiceView,
@@ -56,6 +58,7 @@ const api = {
   bots: {
     preview: (spec: BotSpecInput): Promise<BotPreview> => ipcRenderer.invoke('bots:preview', spec),
     create: (spec: BotSpecInput): Promise<BotCreateResult> => ipcRenderer.invoke('bots:create', spec),
+    draft: (seed: DraftSeedInput): Promise<DraftResult> => ipcRenderer.invoke('bots:draft', seed),
   },
   doctor: {
     report: (): Promise<DoctorReportView> => ipcRenderer.invoke('doctor:report'),

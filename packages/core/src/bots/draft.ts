@@ -1,0 +1,124 @@
+// AI-assisted persona drafting for the Bot Builder. A local (uncensored) model
+// drafts the personality + baseline photo prompts from a name + one-line concept;
+// the user still edits and the usual validateBotSpec gate (incl. the 18+ floor and
+// age-coded rejection) runs on preview/create. This module is pure + injectable so
+// it's fully unit-tested; the real Ollama call lives in ollama-chat.ts.
+
+export type DraftMode = 'sfw' | 'nsfw'
+
+export interface DraftSeed {
+  displayName: string
+  age: number
+  concept: string
+  mode: DraftMode
+}
+
+/** The subset of BotSpec the model drafts; slug/displayName/age/hardRules stay user-owned. */
+export interface DraftedPersona {
+  look: string
+  vibe: string
+  loves: string
+  relationship: string
+  backstory: string
+  speechStyle: string[]
+  openerIdeas: string[]
+  photo: { identity: string; outfit: string; shot: string }
+}
+
+// Belt-and-braces: strip any youth-suggesting term the model might slip in, even
+// though validateBotSpec also rejects them. Mirrors spec.ts's AGE_CODED_RE plus a
+// couple of adjacent words, applied only to the (sensitive) photo fields.
+const AGE_CODED_RE = /\b(loli|shota|teen|teenage|schoolgirl|school girl|child|childlike|underage|minor|young girl)\b/gi
+
+// Local models are loose with the schema — a field asked to be a string sometimes
+// comes back as an object or array. Flatten anything to a readable comma phrase so
+// nothing is silently dropped.
+function text(v: unknown): string {
+  if (typeof v === 'string') return v.trim()
+  if (typeof v === 'number' || typeof v === 'boolean') return String(v)
+  if (Array.isArray(v)) return v.map(text).filter((x) => x !== '').join(', ')
+  if (v !== null && typeof v === 'object') {
+    return Object.values(v as Record<string, unknown>)
+      .map(text)
+      .filter((x) => x !== '')
+      .join(', ')
+  }
+  return ''
+}
+const toLines = (v: unknown): string[] => {
+  if (Array.isArray(v)) return v.map(text).filter((x) => x !== '')
+  const s = text(v)
+  return s === '' ? [] : [s]
+}
+const scrub = (v: unknown): string =>
+  text(v).replace(AGE_CODED_RE, '').replace(/\s{2,}/g, ' ').replace(/^[,\s]+|[,\s]+$/g, '')
+
+/** Extract one JSON object by brace-matching (string-aware); repairs a truncated tail. */
+function extractJsonObject(raw: string): string {
+  const start = raw.indexOf('{')
+  if (start === -1) throw new Error('no JSON object found in the model reply')
+  let depth = 0
+  let inStr = false
+  let esc = false
+  for (let i = start; i < raw.length; i++) {
+    const c = raw[i]
+    if (inStr) {
+      if (esc) esc = false
+      else if (c === '\\') esc = true
+      else if (c === '"') inStr = false
+    } else if (c === '"') inStr = true
+    else if (c === '{') depth++
+    else if (c === '}' && --depth === 0) return raw.slice(start, i + 1)
+  }
+  return raw.slice(start) + '}'.repeat(Math.max(0, depth)) // truncated — close open braces
+}
+
+export function buildDraftPrompt(seed: DraftSeed): string {
+  const tone =
+    seed.mode === 'nsfw'
+      ? 'This is an adult companion (NSFW). Personality, loves, and backstory can be flirty, sexual, and explicit. Keep the photo prompts to tasteful ADULT baseline appearance only — explicit acts are added later at photo time, not here.'
+      : 'Keep everything wholesome, warm, and non-sexual (SFW).'
+  return [
+    `You are helping design a fictional adult companion chatbot character named "${seed.displayName}", age ${seed.age}.`,
+    `Concept: ${seed.concept}.`,
+    tone,
+    `HARD RULE: the character is an ADULT (${seed.age}). NEVER use age-coded or youth-suggesting words anywhere (no "teen", "schoolgirl", "loli", "young girl", "childlike", etc.), especially in the photo prompts. Describe a grown adult woman.`,
+    '',
+    'Output ONLY a JSON object (no prose, no code fences) with EXACTLY these keys:',
+    '- look: short physical description (comma phrases)',
+    '- vibe: her personality in a phrase',
+    '- loves: a few things she loves (comma list)',
+    '- relationship: her relationship to the user (e.g. "your girlfriend")',
+    '- backstory: 1-2 sentences',
+    '- speechStyle: array of 2-4 short bullets on how she talks',
+    '- openerIdeas: array of 2-3 short opening text messages she might send',
+    '- photo: object with identity (adult face/body descriptors incl. the age), outfit (default clothing), shot (camera framing)',
+    '',
+    'Return the JSON now.',
+  ].join('\n')
+}
+
+export function parseDraft(raw: string): DraftedPersona {
+  let obj: Record<string, unknown>
+  try {
+    obj = JSON.parse(extractJsonObject(raw)) as Record<string, unknown>
+  } catch (e) {
+    if (e instanceof Error && /no JSON object found/.test(e.message)) throw e
+    throw new Error('no JSON object could be parsed from the model reply')
+  }
+  const photo = (obj.photo ?? {}) as Record<string, unknown>
+  return {
+    look: text(obj.look),
+    vibe: text(obj.vibe),
+    loves: text(obj.loves),
+    relationship: text(obj.relationship),
+    backstory: text(obj.backstory),
+    speechStyle: toLines(obj.speechStyle),
+    openerIdeas: toLines(obj.openerIdeas),
+    photo: { identity: scrub(photo.identity), outfit: scrub(photo.outfit), shot: scrub(photo.shot) },
+  }
+}
+
+export async function draftPersona(seed: DraftSeed, chat: (prompt: string) => Promise<string>): Promise<DraftedPersona> {
+  return parseDraft(await chat(buildDraftPrompt(seed)))
+}
