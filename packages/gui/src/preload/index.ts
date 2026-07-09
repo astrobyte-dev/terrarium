@@ -20,6 +20,9 @@ import type {
   DraftSeedInput,
   LogLine,
   MetaView,
+  PortraitGenInput,
+  PortraitGenResult,
+  PortraitSaveResult,
   RosterView,
   ServiceView,
 } from '../shared/contract'
@@ -74,6 +77,10 @@ const api = {
   characters: {
     list: (): Promise<RosterView> => ipcRenderer.invoke('characters:list'),
     remove: (heading: string): Promise<CharRemoveResult> => ipcRenderer.invoke('characters:remove', heading),
+  },
+  portraits: {
+    generate: (input: PortraitGenInput): Promise<PortraitGenResult> => ipcRenderer.invoke('portraits:generate', input),
+    saveRef: (slug: string, url: string): Promise<PortraitSaveResult> => ipcRenderer.invoke('portraits:saveRef', slug, url),
   },
 }
 

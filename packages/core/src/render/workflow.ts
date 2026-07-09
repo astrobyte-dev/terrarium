@@ -15,6 +15,8 @@ export interface Txt2ImgOptions {
   scheduler?: string
   seed?: number
   filenamePrefix?: string
+  /** number of images to render in one pass (for candidate portraits). */
+  batchSize?: number
 }
 
 export type ComfyWorkflow = Record<string, { class_type: string; inputs: Record<string, unknown> }>
@@ -24,7 +26,7 @@ export function buildTxt2ImgWorkflow(opts: Txt2ImgOptions): ComfyWorkflow {
   const height = opts.height ?? 768
   return {
     '4': { class_type: 'CheckpointLoaderSimple', inputs: { ckpt_name: opts.checkpoint } },
-    '5': { class_type: 'EmptyLatentImage', inputs: { width, height, batch_size: 1 } },
+    '5': { class_type: 'EmptyLatentImage', inputs: { width, height, batch_size: opts.batchSize ?? 1 } },
     '6': { class_type: 'CLIPTextEncode', inputs: { text: opts.positive, clip: ['4', 1] } },
     '7': { class_type: 'CLIPTextEncode', inputs: { text: opts.negative ?? '', clip: ['4', 1] } },
     '3': {

@@ -9,6 +9,7 @@ import { setupBots } from './bots'
 import { setupCharacters } from './characters'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
+import { resolvePortraitImage, setupPortraits } from './portraits'
 
 // A packaged tray app has no console — boot milestones and crashes go to
 // %LOCALAPPDATA%\Terrarium\gui-boot.log so failures are diagnosable at all.
@@ -122,10 +123,11 @@ app.whenReady().then(() => {
   if (!isPrimaryInstance) return // quitting — never spawn a duplicate supervisor
   bootlog('ready')
 
-  // terrarium://inbox/<file> -> the mirrored photo on disk (inbox-scoped, traversal-guarded).
+  // terrarium://inbox|portraits/<file> -> a scoped, traversal-guarded file on disk.
   protocol.handle('terrarium', (request) => {
     const { host, pathname } = new URL(request.url)
-    const abs = host === 'inbox' ? resolveInboxImage(pathname) : null
+    const abs =
+      host === 'inbox' ? resolveInboxImage(pathname) : host === 'portraits' ? resolvePortraitImage(pathname) : null
     if (!abs) return new Response('not found', { status: 404 })
     return net.fetch(pathToFileURL(abs).toString())
   })
@@ -135,6 +137,7 @@ app.whenReady().then(() => {
   setupCore(() => win) // live supervisor: status/logs/actions
   setupChat(() => win) // in-app chat over the gateway WebSocket
   setupInbox(() => win) // pic daemon → inbox → image bubbles (M8c)
+  setupPortraits() // Bot Builder profile-portrait generation via ComfyUI
   setupBrains() // safe in-place primary-model swap
   setupBots() // create companions (full card + AGENTS.md compact card)
   setupCharacters() // manage the roster (view sizes, remove to reclaim AGENTS.md budget)

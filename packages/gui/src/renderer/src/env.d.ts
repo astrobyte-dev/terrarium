@@ -20,6 +20,9 @@ import type {
   DraftSeedInput,
   LogLine,
   MetaView,
+  PortraitGenInput,
+  PortraitGenResult,
+  PortraitSaveResult,
   RosterView,
   ServiceView,
 } from '../../shared/contract'
@@ -65,6 +68,10 @@ declare global {
       characters: {
         list: () => Promise<RosterView>
         remove: (heading: string) => Promise<CharRemoveResult>
+      }
+      portraits: {
+        generate: (input: PortraitGenInput) => Promise<PortraitGenResult>
+        saveRef: (slug: string, url: string) => Promise<PortraitSaveResult>
       }
     }
   }

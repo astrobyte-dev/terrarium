@@ -64,6 +64,23 @@ export function BotBuilderScreen() {
   const [drafting, setDrafting] = useState(false)
   const [draftNote, setDraftNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [rerolling, setRerolling] = useState<DraftFieldKey | null>(null)
+  const [portraits, setPortraits] = useState<string[]>([])
+  const [selectedPortrait, setSelectedPortrait] = useState<string | null>(null)
+  const [genning, setGenning] = useState(false)
+  const [portraitNote, setPortraitNote] = useState<{ ok: boolean; text: string } | null>(null)
+
+  const generatePortraits = async () => {
+    setGenning(true)
+    setPortraitNote(null)
+    const r = await window.terrarium.portraits.generate({
+      identity: f.photoIdentity,
+      outfit: f.photoOutfit,
+      shot: f.photoShot,
+    })
+    setGenning(false)
+    if (r.ok) setPortraits((prev) => [...r.images, ...prev].slice(0, 12))
+    else setPortraitNote({ ok: false, text: r.error ?? 'portrait generation failed' })
+  }
 
   // Re-roll one field from the name + concept, leaving the rest of the form alone.
   const rerollField = async (k: DraftFieldKey) => {
@@ -159,9 +176,14 @@ export function BotBuilderScreen() {
     // doesn't need a manual Preview first — it reports errors here if anything's off.
     const r = await window.terrarium.bots.create(spec)
     if (r.ok && r.wrote) {
+      let faceMsg = ''
+      if (selectedPortrait) {
+        const sr = await window.terrarium.portraits.saveRef(slug, selectedPortrait)
+        faceMsg = sr.ok ? ' Her chosen face is saved as her reference.' : ` (couldn't save the face: ${sr.message})`
+      }
       setNote({
         ok: true,
-        text: `Created ${spec.displayName}! Saved to characters/${slug}.md + AGENTS.md (backup ${r.backupPath?.split('\\').pop()}). Say /be ${slug} in chat to meet her — takes effect on the next message, no restart needed.`,
+        text: `Created ${spec.displayName}! Saved to characters/${slug}.md + AGENTS.md (backup ${r.backupPath?.split('\\').pop()}).${faceMsg} Say /be ${slug} in chat to meet her — takes effect next message, no restart needed.`,
       })
     } else {
       setNote({ ok: false, text: r.errors.join(' · ') || 'could not create' })
@@ -283,6 +305,34 @@ export function BotBuilderScreen() {
       </div>
 
       <aside className="bb-preview">
+        <div className="bb-section">Profile portrait</div>
+        <div className="bb-portraits">
+          <p className="bb-hint">
+            Renders candidate faces from the Photo pipeline fields (below-left). Pick one and it's saved as her reference
+            on Create, so her photos stay on-face. ~1 min per batch on the GPU.
+          </p>
+          <button className="bb-check" type="button" disabled={genning} onClick={() => void generatePortraits()}>
+            {genning ? 'Rendering… (~1 min)' : portraits.length > 0 ? 'Generate more' : '📷 Generate portraits'}
+          </button>
+          {portraitNote && <div className={`bb-draft-note ${portraitNote.ok ? 'ok' : 'err'}`}>{portraitNote.text}</div>}
+          {portraits.length > 0 && (
+            <div className="bb-portrait-grid">
+              {portraits.map((url) => (
+                <button
+                  key={url}
+                  type="button"
+                  className={`bb-portrait ${selectedPortrait === url ? 'sel' : ''}`}
+                  onClick={() => setSelectedPortrait(selectedPortrait === url ? null : url)}
+                  title="Use this face"
+                >
+                  <img src={url} alt="candidate portrait" loading="lazy" />
+                </button>
+              ))}
+            </div>
+          )}
+          {selectedPortrait && <p className="bb-hint">✓ this face saves as her reference when you Create.</p>}
+        </div>
+
         <div className="bb-section">Preview</div>
         {note && <div className={`bb-note ${note.ok ? 'ok' : 'err'}`}>{note.text}</div>}
         {!preview && !note && <p className="bb-empty">Fill the form and hit “Preview / check” to see her compact card and whether it fits AGENTS.md.</p>}

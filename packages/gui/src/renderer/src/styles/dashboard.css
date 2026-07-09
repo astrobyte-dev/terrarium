@@ -1423,6 +1423,41 @@
   opacity: 0.5;
   cursor: progress;
 }
+/* profile portrait generator */
+.bb-portraits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.4rem;
+}
+.bb-portrait-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
+}
+.bb-portrait {
+  padding: 0;
+  border: 2px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+  overflow: hidden;
+  aspect-ratio: 3 / 4;
+  transition: border-color 0.14s;
+}
+.bb-portrait img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.bb-portrait:hover {
+  border-color: var(--edge-strong);
+}
+.bb-portrait.sel {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent);
+}
 
 .bb-preview {
   border-left: 1px solid var(--edge);

@@ -113,6 +113,22 @@ export interface BotCreateResult {
   fullCardPath: string | null
 }
 
+// ---- profile portraits (Bot Builder: generate candidate faces via ComfyUI) ----
+export interface PortraitGenInput {
+  identity: string
+  outfit: string
+  shot: string
+}
+export interface PortraitGenResult {
+  ok: boolean
+  images: string[] // terrarium://portraits/… URLs
+  error?: string
+}
+export interface PortraitSaveResult {
+  ok: boolean
+  message: string
+}
+
 // ---- character roster (manage who's in AGENTS.md / the 12k budget) ----
 export interface RosterCardView {
   heading: string
