@@ -36,12 +36,18 @@ export interface MigrationDeps {
   prepareConfig?: (phase: 'migrate' | 'release') => Promise<void>
 }
 
+/** Suffix used by the pre-2026-07-10 rename-in-place scheme; still swept up. */
 const DISABLED_SUFFIX = '.terrarium-disabled'
 
 const esc = (name: string) => name.replace(/'/g, "''")
 const ledgerPath = (sys: SystemPort) => `${sys.env('LOCALAPPDATA') ?? ''}\\Terrarium\\ownership.json`
 const startupDir = (sys: SystemPort) =>
   `${sys.env('APPDATA') ?? ''}\\Microsoft\\Windows\\Start Menu\\Programs\\Startup`
+/** Parked launchers live outside Startup — see the note in migrate() step 2. */
+const parkedDir = (sys: SystemPort) => `${sys.env('LOCALAPPDATA') ?? ''}\\Terrarium\\startup-disabled`
+
+const isLauncher = (name: string) => /openclaw/i.test(name) && /\.(cmd|bat|lnk)$/i.test(name)
+const isStray = (name: string) => name.endsWith(DISABLED_SUFFIX)
 
 export async function readOwnership(sys: SystemPort): Promise<OwnershipLedger | null> {
   try {
@@ -84,15 +90,43 @@ export async function migrate(deps: MigrationDeps): Promise<MigrationReport> {
     )
   }
 
-  // 2. Startup-folder launchers (legacy duplicate-gateway source): rename, reversibly.
+  // 2. Startup-folder launchers (legacy duplicate-gateway source): move them
+  // OUT of the folder, reversibly. Renaming in place does not disable a Startup
+  // entry — Windows shell-executes every file in the folder whatever its
+  // extension, so a `.terrarium-disabled` launcher turns into an "open this
+  // file with?" dialog at every logon (live find, 2026-07-10: two of them).
+  // Leaving the folder is the only thing that actually silences a launcher.
   const dir = startupDir(system)
+  const parked = parkedDir(system)
   const disabledStartupEntries: OwnershipLedger['disabledStartupEntries'] = []
-  for (const entry of await safe(() => system.listDir(dir), [])) {
-    if (!/openclaw/i.test(entry.name) || !/\.(cmd|bat|lnk)$/i.test(entry.name)) continue
+  const entries = await safe(() => system.listDir(dir), [])
+  const claimed = new Set<string>()
+  // Live launchers first, so a leftover stray can never clobber the real file.
+  const ordered = [...entries].sort((a, b) => Number(isStray(a.name)) - Number(isStray(b.name)))
+  for (const entry of ordered) {
+    const stray = isStray(entry.name)
+    const original = stray ? entry.name.slice(0, -DISABLED_SUFFIX.length) : entry.name
+    if (!isLauncher(original)) continue
+    await safe(() => system.ensureDir(parked), undefined)
+    // A stray whose original name is already parked keeps its suffix: it is a
+    // duplicate, so evict it from Startup but do not overwrite the real one.
+    const collides = claimed.has(original.toLowerCase())
     const from = `${dir}\\${entry.name}`
-    const to = `${from}${DISABLED_SUFFIX}`
-    await system.moveFile(from, to)
-    disabledStartupEntries.push({ from, to })
+    const to = `${parked}\\${collides ? entry.name : original}`
+    try {
+      await system.moveFile(from, to)
+    } catch (err) {
+      warnings.push(
+        `could not move startup launcher "${entry.name}" out of the Startup folder ` +
+          `(${err instanceof Error ? err.message : String(err)}). It will start a second, ` +
+          `session-poisoning gateway at your next logon. Move it out of "${dir}" by hand.`,
+      )
+      continue
+    }
+    if (collides) continue
+    claimed.add(original.toLowerCase())
+    // Restore target is always the un-suffixed name, so release() heals strays.
+    disabledStartupEntries.push({ from: `${dir}\\${original}`, to })
   }
 
   // 3. Kill running strays, dependents first (daemon → gateway → backends).
@@ -170,8 +204,15 @@ export async function release(deps: MigrationDeps): Promise<void> {
     }
   }
 
+  // A failed restore leaves the launcher parked outside Startup — inert, not a
+  // logon dialog — but the user's autostart is then silently missing, so say so.
+  const notRestored: string[] = []
   for (const entry of ledger.disabledStartupEntries) {
-    await safe(() => system.moveFile(entry.to, entry.from), undefined)
+    try {
+      await system.moveFile(entry.to, entry.from)
+    } catch {
+      notRestored.push(entry.to)
+    }
   }
   for (const task of ledger.disabledTasks) {
     await safe(() => system.runPowerShell(`Enable-ScheduledTask -TaskName '${esc(task.name)}' | Out-Null`), '')
@@ -187,6 +228,11 @@ export async function release(deps: MigrationDeps): Promise<void> {
       `released, but the config rewrite failed — the tasks may be running with a config that lacks secrets: ${
         configError instanceof Error ? configError.message : String(configError)
       }`,
+    )
+  }
+  if (notRestored.length > 0) {
+    throw new Error(
+      `released, but these startup launchers could not be put back and remain parked: ${notRestored.join(', ')}`,
     )
   }
 }

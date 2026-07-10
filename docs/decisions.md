@@ -70,10 +70,17 @@ Name: **Terrarium** (Corey's pick over Hearth).
 - **migrate()/release() are symmetric and ledger-backed**
   (`%LOCALAPPDATA%\Terrarium\ownership.json`). Migrate: stop+disable the three
   OpenClaw tasks (watchdog first-class — it would resurrect what we stop),
-  rename Startup-folder launchers to `*.terrarium-disabled`, kill strays
-  dependents-first, write ledger, `startAll()`. Release: `stopAll()`, sweep
-  orphans (crash recovery), restore renames, re-enable **and start** the tasks
-  (starting the watchdog revives Ollama/ComfyUI immediately).
+  **move** Startup-folder launchers to `%LOCALAPPDATA%\Terrarium\startup-disabled`,
+  kill strays dependents-first, write ledger, `startAll()`. Release: `stopAll()`,
+  sweep orphans (crash recovery), move the launchers back, re-enable **and start**
+  the tasks (starting the watchdog revives Ollama/ComfyUI immediately).
+  - **Moving out beats renaming in place.** Until 2026-07-10 migrate renamed
+    launchers to `*.terrarium-disabled` and left them in Startup. Windows
+    shell-executes *every* file in that folder whatever the extension, so each
+    one raised an "open this file with?" dialog at logon — and a failed release
+    stranded them there for good (the restore was wrapped in `safe()`). Migrate
+    now sweeps any such stray, and a failed restore only leaves the launcher
+    parked (inert) and throws instead of losing it silently.
 - **The daemon runs as `python.exe` (not `pythonw`) when owned** — hidden
   window + piped stdout feeds the log pane; `PYTHONUNBUFFERED=1`.
 - **We spawn the gateway with `TMPDIR=%LOCALAPPDATA%\Temp`** so its JSONL log

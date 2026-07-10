@@ -10,7 +10,10 @@ const TASKS_JSON = JSON.stringify([
   { TaskName: 'OpenClaw Pic Daemon', State: 4 },
 ])
 
-function world() {
+const STARTUP = 'C:\\RAD\\Microsoft\\Windows\\Start Menu\\Programs\\Startup'
+const PARKED = 'C:\\LAD\\Terrarium\\startup-disabled'
+
+function world(startupNames = ['OpenClaw Gateway.cmd', 'OpenClaw Node.cmd', 'desktop.ini']) {
   const psCommands: string[] = []
   const moved: Array<[string, string]> = []
   const written = new Map<string, string>()
@@ -44,13 +47,7 @@ function world() {
       return ''
     },
     listDir: async (dir) =>
-      dir.includes('Startup')
-        ? [
-            { name: 'OpenClaw Gateway.cmd', mtimeMs: 1 },
-            { name: 'OpenClaw Node.cmd', mtimeMs: 2 },
-            { name: 'desktop.ini', mtimeMs: 3 },
-          ]
-        : [],
+      dir.includes('Startup') ? startupNames.map((name, i) => ({ name, mtimeMs: i + 1 })) : [],
     moveFile: async (from, to) => void moved.push([from, to]),
     writeTextFile: async (p, t) => void written.set(p, t),
     readTextFile: async (p) => {
@@ -100,10 +97,13 @@ describe('migrate', () => {
     expect(disables.some((c) => c.includes('OpenClaw Pic Daemon'))).toBe(true)
 
     expect(w.moved).toContainEqual([
-      'C:\\RAD\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\OpenClaw Gateway.cmd',
-      'C:\\RAD\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\OpenClaw Gateway.cmd.terrarium-disabled',
+      `${STARTUP}\\OpenClaw Gateway.cmd`,
+      `${PARKED}\\OpenClaw Gateway.cmd`,
     ])
     expect(w.moved.some(([f]) => f.endsWith('desktop.ini'))).toBe(false)
+    // The whole point: nothing a launcher was moved to may still live in
+    // Startup, or Windows prompts "open with?" for it at every logon.
+    expect(w.moved.some(([, to]) => to.startsWith(STARTUP))).toBe(false)
 
     expect(w.killed).toEqual(expect.arrayContaining([11, 12]))
     expect(report.killedPids).toEqual(expect.arrayContaining([11, 12]))
@@ -144,12 +144,62 @@ describe('migrate', () => {
     expect(enables).toHaveLength(3)
     const starts = w.psCommands.filter((c) => c.includes('Start-ScheduledTask'))
     expect(starts.length).toBeGreaterThanOrEqual(3)
-    // startup entries restored: .terrarium-disabled → original
+    // startup entries restored: parked dir → original Startup path
     expect(w.moved).toContainEqual([
-      'C:\\RAD\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\OpenClaw Gateway.cmd.terrarium-disabled',
-      'C:\\RAD\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\OpenClaw Gateway.cmd',
+      `${PARKED}\\OpenClaw Gateway.cmd`,
+      `${STARTUP}\\OpenClaw Gateway.cmd`,
     ])
     expect(w.deleted.some((p) => p.endsWith('ownership.json'))).toBe(true)
+    expect(await readOwnership(w.deps.system)).toBeNull()
+  })
+
+  it('sweeps launchers stranded in Startup by the old rename-in-place scheme', async () => {
+    // Live find 2026-07-10: a failed release left these behind, and Windows
+    // showed an "open this file with?" dialog for each one at every boot.
+    const w = world(['OpenClaw Gateway.cmd.terrarium-disabled', 'OpenClaw Node.cmd.terrarium-disabled'])
+    const report = await migrate(w.deps)
+
+    expect(w.moved).toContainEqual([
+      `${STARTUP}\\OpenClaw Gateway.cmd.terrarium-disabled`,
+      `${PARKED}\\OpenClaw Gateway.cmd`,
+    ])
+    expect(w.moved.some(([, to]) => to.startsWith(STARTUP))).toBe(false)
+    expect(report.warnings).toEqual([])
+    // Restoring puts back the un-suffixed name, so the stray is fully healed.
+    const ledger = await readOwnership(w.deps.system)
+    expect(ledger!.disabledStartupEntries).toContainEqual({
+      from: `${STARTUP}\\OpenClaw Gateway.cmd`,
+      to: `${PARKED}\\OpenClaw Gateway.cmd`,
+    })
+  })
+
+  it('a stray never clobbers the live launcher of the same name', async () => {
+    const w = world(['OpenClaw Gateway.cmd', 'OpenClaw Gateway.cmd.terrarium-disabled'])
+    await migrate(w.deps)
+
+    // Both leave Startup; only the live one claims the un-suffixed parked path.
+    expect(w.moved.some(([, to]) => to.startsWith(STARTUP))).toBe(false)
+    expect(w.moved).toContainEqual([
+      `${STARTUP}\\OpenClaw Gateway.cmd`,
+      `${PARKED}\\OpenClaw Gateway.cmd`,
+    ])
+    expect(w.moved).toContainEqual([
+      `${STARTUP}\\OpenClaw Gateway.cmd.terrarium-disabled`,
+      `${PARKED}\\OpenClaw Gateway.cmd.terrarium-disabled`,
+    ])
+    const ledger = await readOwnership(w.deps.system)
+    expect(ledger!.disabledStartupEntries).toHaveLength(1)
+  })
+
+  it('release reports launchers it could not put back instead of losing them', async () => {
+    const w = world()
+    await migrate(w.deps)
+    w.deps.system.moveFile = async () => {
+      throw new Error('locked')
+    }
+    await expect(release(w.deps)).rejects.toThrow(/could not be put back/)
+    // Tasks still came back, and the ledger is cleared — we no longer own it.
+    expect(w.psCommands.filter((c) => c.includes('Enable-ScheduledTask'))).toHaveLength(3)
     expect(await readOwnership(w.deps.system)).toBeNull()
   })
 
