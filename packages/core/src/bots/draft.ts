@@ -11,6 +11,57 @@ export interface DraftSeed {
   age: number
   concept: string
   mode: DraftMode
+  /** 0–4 spice dial (wholesome→explicit). When set it overrides `mode` for tone;
+   *  when omitted, tone falls back to the coarse `mode` for backward compatibility. */
+  spice?: number
+}
+
+// The NSFW branches keep the photo prompts tame on purpose — explicit *acts* are added
+// later at /pic time, not baked into the baseline appearance the card ships with.
+const PHOTO_CAVEAT =
+  ' Keep the photo prompts to tasteful ADULT baseline appearance only — explicit acts are added later at photo time, not here.'
+
+/** Tone paragraphs for the persona draft + a single-field re-roll, graded by spice. */
+export function spiceTone(level: number): { persona: string; field: string } {
+  const clamped = Math.max(0, Math.min(4, Math.round(level)))
+  switch (clamped) {
+    case 0:
+      return { persona: 'Keep everything wholesome, warm, and non-sexual (SFW).', field: 'Keep it wholesome (SFW).' }
+    case 1:
+      return {
+        persona: 'Keep it warm and lightly flirty — playful teasing is fine, but nothing sexual or explicit (SFW).',
+        field: 'Warm and lightly flirty, nothing explicit (SFW).',
+      }
+    case 2:
+      return {
+        persona: 'This is an adult companion (NSFW). Personality, loves, and backstory can be flirty and openly sexual.' + PHOTO_CAVEAT,
+        field: 'She is an adult companion (NSFW) — flirty and openly sexual is fine.',
+      }
+    case 3:
+      return {
+        persona: 'This is an adult companion (NSFW). Personality, loves, and backstory can be sensual, forward, and sexually explicit.' + PHOTO_CAVEAT,
+        field: 'She is an adult companion (NSFW) — sensual, forward, sexually explicit is fine.',
+      }
+    default:
+      return {
+        persona:
+          'This is an adult companion (NSFW). Personality, loves, and backstory can be uninhibited and sexually explicit, including kinks and desires.' + PHOTO_CAVEAT,
+        field: 'She is an adult companion (NSFW) — uninhibited, explicit; kinks and desires are fine.',
+      }
+  }
+}
+
+// Resolve the tone for a seed: prefer the fine-grained spice dial. With no spice, fall
+// back to the original coarse mode strings verbatim, so pre-dial callers are unchanged.
+function seedTone(seed: DraftSeed): { persona: string; field: string } {
+  if (seed.spice !== undefined) return spiceTone(seed.spice)
+  return seed.mode === 'nsfw'
+    ? {
+        persona:
+          'This is an adult companion (NSFW). Personality, loves, and backstory can be flirty, sexual, and explicit.' + PHOTO_CAVEAT,
+        field: 'She is an adult companion (NSFW) — flirty/explicit is fine.',
+      }
+    : { persona: 'Keep everything wholesome, warm, and non-sexual (SFW).', field: 'Keep it wholesome (SFW).' }
 }
 
 /** The subset of BotSpec the model drafts; slug/displayName/age/hardRules stay user-owned. */
@@ -74,10 +125,7 @@ function extractJsonObject(raw: string): string {
 }
 
 export function buildDraftPrompt(seed: DraftSeed): string {
-  const tone =
-    seed.mode === 'nsfw'
-      ? 'This is an adult companion (NSFW). Personality, loves, and backstory can be flirty, sexual, and explicit. Keep the photo prompts to tasteful ADULT baseline appearance only — explicit acts are added later at photo time, not here.'
-      : 'Keep everything wholesome, warm, and non-sexual (SFW).'
+  const tone = seedTone(seed).persona
   return [
     `You are helping design a fictional adult companion chatbot character named "${seed.displayName}", age ${seed.age}.`,
     `Concept: ${seed.concept}.`,
@@ -158,7 +206,7 @@ const FIELD_SPEC: Record<DraftField, { label: string; array: boolean; photo: boo
 
 export function buildFieldPrompt(seed: DraftSeed, field: DraftField): string {
   const spec = FIELD_SPEC[field]
-  const tone = seed.mode === 'nsfw' ? 'She is an adult companion (NSFW) — flirty/explicit is fine.' : 'Keep it wholesome (SFW).'
+  const tone = seedTone(seed).field
   return [
     `Adult companion "${seed.displayName}", age ${seed.age}. Concept: ${seed.concept}.`,
     tone,

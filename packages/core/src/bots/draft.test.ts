@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildDraftPrompt, buildFieldPrompt, parseDraft, draftPersona, draftField, type DraftSeed } from './draft'
+import { buildDraftPrompt, buildFieldPrompt, parseDraft, draftPersona, draftField, spiceTone, type DraftSeed } from './draft'
 
 const SEED: DraftSeed = { displayName: 'Nova', age: 24, concept: 'flirty australian DJ', mode: 'nsfw' }
 
@@ -28,6 +28,29 @@ describe('buildDraftPrompt', () => {
   it('shifts tone by mode', () => {
     expect(buildDraftPrompt({ ...SEED, mode: 'sfw' })).toMatch(/wholesome|non-sexual|sfw/i)
     expect(buildDraftPrompt({ ...SEED, mode: 'nsfw' })).toMatch(/explicit|flirty|adult companion|nsfw/i)
+  })
+
+  it('grades tone by the spice dial and lets spice override mode', () => {
+    const at = (spice: number, mode: 'sfw' | 'nsfw' = 'nsfw') => buildDraftPrompt({ ...SEED, mode, spice })
+    expect(at(0)).toMatch(/wholesome|non-sexual/i)
+    expect(at(0)).not.toMatch(/NSFW/)
+    expect(at(1)).toMatch(/flirty/i)
+    expect(at(1)).toMatch(/\(SFW\)/)
+    expect(at(1)).not.toMatch(/NSFW/)
+    expect(at(2)).toMatch(/adult companion \(NSFW\)/)
+    expect(at(4)).toMatch(/explicit|kinks/i)
+    // spice wins even when the coarse mode disagrees
+    expect(at(4, 'sfw')).toMatch(/NSFW/)
+    expect(at(0, 'nsfw')).not.toMatch(/NSFW/)
+  })
+})
+
+describe('spiceTone', () => {
+  it('rises monotonically from wholesome to explicit and clamps out-of-range', () => {
+    expect(spiceTone(0).persona).toMatch(/wholesome/i)
+    expect(spiceTone(4).persona).toMatch(/kinks|uninhibited/i)
+    expect(spiceTone(-3)).toEqual(spiceTone(0)) // clamped low
+    expect(spiceTone(99)).toEqual(spiceTone(4)) // clamped high
   })
 })
 

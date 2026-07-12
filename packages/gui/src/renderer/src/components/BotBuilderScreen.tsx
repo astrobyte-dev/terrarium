@@ -4,7 +4,13 @@ import { deriveSlug } from '../data/slug'
 import { Lightbox } from './Lightbox'
 import { SkinDetail } from './SkinDetail'
 import { ApparentAge } from './ApparentAge'
+import { BodyShape } from './BodyShape'
+import { PhotoPickers } from './PhotoPickers'
 import { BuilderRoster } from './BuilderRoster'
+import { SpecimenCard } from './SpecimenCard'
+import { ArchetypeGallery } from './ArchetypeGallery'
+import { SpiceDial, spiceToMode } from './SpiceDial'
+import { ARCHETYPES, type Archetype, completeness, findContradictions, signatureAccent } from '../data/persona'
 
 interface Form {
   displayName: string
@@ -93,7 +99,12 @@ export function BotBuilderScreen({
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [busy, setBusy] = useState(false)
   const [concept, setConcept] = useState('')
-  const [mode, setMode] = useState<'sfw' | 'nsfw'>('sfw')
+  const [spice, setSpice] = useState(1)
+  const mode = spiceToMode(spice)
+  const [flow, setFlow] = useState<'guided' | 'all'>('guided')
+  const [step, setStep] = useState(0)
+  const [locks, setLocks] = useState<Set<DraftFieldKey>>(new Set())
+  const [activeArch, setActiveArch] = useState<Archetype | null>(null)
   const [drafting, setDrafting] = useState(false)
   const [draftNote, setDraftNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [rerolling, setRerolling] = useState<DraftFieldKey | null>(null)
@@ -103,12 +114,17 @@ export function BotBuilderScreen({
   const [portraitNote, setPortraitNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [skin, setSkin] = useState('')
   const [apparentAge, setApparentAge] = useState('')
+  const [body, setBody] = useState('')
+  const [appearance, setAppearance] = useState('')
   const [zoom, setZoom] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ slug: string; heading: string } | null>(null)
   const [rosterKey, setRosterKey] = useState(0)
   const onSkin = useCallback((phrase: string) => setSkin(phrase), [])
   const onApparentAge = useCallback((phrase: string) => setApparentAge(phrase), [])
-  const photoExtra = joinIdentity(apparentAge, skin)
+  const onBody = useCallback((phrase: string) => setBody(phrase), [])
+  const onAppearance = useCallback((phrase: string) => setAppearance(phrase), [])
+  // appearance leads (ethnicity/hair/eyes carry the identity), then figure, age, skin.
+  const photoExtra = joinIdentity(appearance, apparentAge, body, skin)
 
   const startEdit = useCallback(async (slug: string, heading: string) => {
     const r = await window.terrarium.characters.get(slug)
@@ -129,6 +145,8 @@ export function BotBuilderScreen({
     setF(EMPTY)
     setPreview(null)
     setNote(null)
+    setActiveArch(null)
+    setStep(0)
   }
 
   // Edit requested from another screen (Characters → Edit): load that character in.
@@ -164,7 +182,7 @@ export function BotBuilderScreen({
     setRerolling(k)
     try {
       const r = await window.terrarium.bots.draftField(
-        { displayName: name, age: Number.parseInt(f.age, 10) || 18, concept: idea, mode },
+        { displayName: name, age: Number.parseInt(f.age, 10) || 18, concept: idea, mode, spice },
         k,
       )
       if (r.ok && r.value !== undefined) {
@@ -199,25 +217,31 @@ export function BotBuilderScreen({
         age: Number.parseInt(f.age, 10) || 18,
         concept: idea,
         mode,
+        spice,
       })
       if (r.ok && r.persona) {
+        // Respect locks: a 🔒 field keeps its current value through a (re)draft.
         const p = r.persona
+        const put = (k: keyof Form, ai: DraftFieldKey, v: string) => (locks.has(ai) ? {} : { [k]: v })
         setF((prev) => ({
           ...prev,
-          look: p.look,
-          vibe: p.vibe,
-          loves: p.loves,
-          relationship: p.relationship,
-          backstory: p.backstory,
-          speechStyle: p.speechStyle.join('\n'),
-          openerIdeas: p.openerIdeas.join('\n'),
-          photoIdentity: p.photo.identity,
-          photoOutfit: p.photo.outfit,
-          photoShot: p.photo.shot,
+          ...put('look', 'look', p.look),
+          ...put('vibe', 'vibe', p.vibe),
+          ...put('loves', 'loves', p.loves),
+          ...put('relationship', 'relationship', p.relationship),
+          ...put('backstory', 'backstory', p.backstory),
+          ...put('speechStyle', 'speechStyle', p.speechStyle.join('\n')),
+          ...put('openerIdeas', 'openerIdeas', p.openerIdeas.join('\n')),
+          ...put('photoIdentity', 'photoIdentity', p.photo.identity),
+          ...put('photoOutfit', 'photoOutfit', p.photo.outfit),
+          ...put('photoShot', 'photoShot', p.photo.shot),
         }))
         setPreview(null)
         setNote(null)
-        setDraftNote({ ok: true, text: 'Drafted below — review and tweak anything, then Preview / check.' })
+        setDraftNote({
+          ok: true,
+          text: locks.size > 0 ? `Drafted — kept your ${locks.size} locked field${locks.size > 1 ? 's' : ''}.` : 'Drafted below — review and tweak anything.',
+        })
       } else {
         setDraftNote({ ok: false, text: r.error ?? 'Draft failed — is Ollama running?' })
       }
@@ -233,8 +257,49 @@ export function BotBuilderScreen({
     setPreview(null)
     setNote(null)
   }
+
+  // Lock a field so a (re)draft or shuffle won't overwrite it.
+  const toggleLock = (ai: DraftFieldKey) =>
+    setLocks((prev) => {
+      const next = new Set(prev)
+      next.has(ai) ? next.delete(ai) : next.add(ai)
+      return next
+    })
+
+  // Seed the form from a starter archetype and paint the studio her accent. `force`
+  // (used by Surprise me) overwrites; a normal pick only fills empty fields so it never
+  // clobbers your edits.
+  const useArchetype = (a: Archetype, force = false) => {
+    setActiveArch(a)
+    setConcept((prev) => (force || !prev.trim() ? a.seed.concept : prev))
+    const take = (prev: string, seed: string) => (force || !prev.trim() ? seed : prev)
+    setF((prev) => ({
+      ...prev,
+      displayName: take(prev.displayName, a.name),
+      vibe: take(prev.vibe, a.seed.vibe),
+      loves: take(prev.loves, a.seed.loves),
+      relationship: take(prev.relationship, a.seed.relationship),
+      look: take(prev.look, a.seed.look),
+      backstory: take(prev.backstory, a.seed.backstory),
+    }))
+    setPreview(null)
+    setNote(null)
+    setDraftNote({ ok: true, text: `Seeded ${a.name} — tweak anything, ✨ Draft to flesh her out, or move on.` })
+  }
+
+  const surpriseMe = () => {
+    const a = ARCHETYPES[Math.floor(Math.random() * ARCHETYPES.length)]
+    useArchetype(a, true)
+    setDraftNote({ ok: true, text: `🎲 Surprised you with ${a.name}, the ${a.kind.toLowerCase()} — edit her, or ✨ Draft to go deeper.` })
+  }
+
   const spec = buildSpec(f, photoExtra)
   const slug = spec.slug
+  const comp = completeness(spec)
+  const contradictions = findContradictions(f.look, spec.photo.identity)
+  const accent = activeArch?.accent ?? signatureAccent(f.displayName.trim() || 'companion')
+  const cardTags = activeArch?.tags ?? f.loves.split(',').map((s) => s.trim()).filter(Boolean).slice(0, 4)
+  const cardMeta = activeArch?.meta ?? f.vibe.split(/[,.]/)[0]?.trim() ?? ''
 
   const doPreview = async () => {
     setBusy(true)
@@ -302,10 +367,26 @@ export function BotBuilderScreen({
         {rerolling === ai ? '…' : '🎲'}
       </button>
     ) : null
+  const Lock = ({ ai }: { ai?: DraftFieldKey }) =>
+    ai ? (
+      <button
+        type="button"
+        className={`bb-lock ${locks.has(ai) ? 'on' : ''}`}
+        title={locks.has(ai) ? 'Locked — drafts won’t change this' : 'Lock this from drafts'}
+        aria-pressed={locks.has(ai)}
+        aria-label={`${locks.has(ai) ? 'Unlock' : 'Lock'} ${ai}`}
+        onClick={() => toggleLock(ai)}
+      >
+        {locks.has(ai) ? '🔒' : '🔓'}
+      </button>
+    ) : null
   const Label = ({ label, ai }: { label: string; ai?: DraftFieldKey }) => (
     <span className="bb-label-row">
       <span className="bb-label">{label}</span>
-      <Dice ai={ai} />
+      <span className="bb-label-tools">
+        <Lock ai={ai} />
+        <Dice ai={ai} />
+      </span>
     </span>
   )
   const T = (label: string, k: keyof Form, ph: string, hint?: string, ai?: DraftFieldKey) => (
@@ -323,6 +404,35 @@ export function BotBuilderScreen({
     </label>
   )
 
+  // Guided flow: one step at a time. Editing an existing character always shows the
+  // whole form (no wizard), and the Everything toggle opts back into the full form.
+  const guided = flow === 'guided' && !editing
+  const show = (n: number) => !guided || step === n
+  const STEP_TITLES = ['Who she is', 'How she talks', 'How she looks', 'Meet her']
+  const NEXT_LABELS = ['Next: how she talks →', 'Next: how she looks →', 'Next: meet her →']
+
+  const actionButtons = (
+    <>
+      <button className="bb-check" type="button" disabled={busy} onClick={() => void doPreview()}>
+        {busy ? 'Checking…' : 'Preview / check'}
+      </button>
+      {editing && (
+        <button className="bb-check" type="button" disabled={busy} onClick={cancelEdit}>
+          Cancel edit
+        </button>
+      )}
+      {editing ? (
+        <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doSave()}>
+          Save changes
+        </button>
+      ) : (
+        <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doCreate()}>
+          Create {spec.displayName || 'companion'}
+        </button>
+      )}
+    </>
+  )
+
   return (
     <div className="bb">
       <div className="bb-form">
@@ -332,7 +442,6 @@ export function BotBuilderScreen({
             Create a companion. She gets a full card in <code>characters/{slug || '<slug>'}.md</code> and a compact card
             in <code>AGENTS.md</code> (backed up first, only if it fits the 12k budget).
           </p>
-          <p className="bb-guard">18+ only — the floor, no exceptions. Photo fields reject age-coded terms.</p>
           {editing && (
             <div className="bb-editing-banner">
               ✎ Editing <b>{f.displayName || editing.slug}</b> — “Save changes” overwrites her card (backed up first).
@@ -340,90 +449,173 @@ export function BotBuilderScreen({
           )}
         </header>
 
-        <div className="bb-section">Identity</div>
-        {T('Display name', 'displayName', 'Nova', slug ? `saved as: ${slug}` : 'type a name to generate the slug')}
-        <label className="bb-field bb-age">
-          <span className="bb-label">Age</span>
-          <input type="number" min={18} value={f.age} onChange={set('age')} />
-          <span className="bb-hint">must be 18 or older</span>
-        </label>
-
-        <div className="bb-section">Draft with AI</div>
-        <div className="bb-ai">
-          <label className="bb-field">
-            <span className="bb-label">Concept</span>
-            <input
-              value={concept}
-              onChange={(e) => setConcept(e.target.value)}
-              placeholder="one line, e.g. “flirty australian DJ who loves late sets”"
-            />
-            <span className="bb-hint">a local model fills the personality below from the name + concept — you edit it, and the 18+ gate still runs on preview</span>
-          </label>
-          <div className="bb-ai-row">
-            <div className="bb-toggle" role="group" aria-label="Tone">
-              <button type="button" className={mode === 'sfw' ? 'on' : ''} onClick={() => setMode('sfw')}>
-                SFW
+        {!editing && (
+          <div className="bb-flowbar">
+            <div className="bb-modeswitch" role="group" aria-label="Builder mode">
+              <button type="button" aria-pressed={guided} className={guided ? 'on' : ''} onClick={() => setFlow('guided')}>
+                Guided
               </button>
-              <button type="button" className={mode === 'nsfw' ? 'on' : ''} onClick={() => setMode('nsfw')}>
-                NSFW
+              <button type="button" aria-pressed={!guided} className={!guided ? 'on' : ''} onClick={() => setFlow('all')}>
+                Everything
               </button>
             </div>
-            <button className="bb-draft" type="button" disabled={drafting} onClick={() => void doDraft()}>
-              {drafting ? 'Drafting…' : '✨ Draft with AI'}
-            </button>
+            {guided && (
+              <nav className="bb-rail" aria-label="Creation steps">
+                {STEP_TITLES.map((t, i) => (
+                  <button
+                    key={t}
+                    type="button"
+                    className={`bb-step ${i === step ? 'on' : ''} ${i < step ? 'done' : ''}`}
+                    aria-current={i === step}
+                    onClick={() => setStep(i)}
+                  >
+                    <span className="bb-step-dot">{i + 1}</span>
+                    <span className="bb-step-lbl">{t}</span>
+                  </button>
+                ))}
+              </nav>
+            )}
           </div>
-          {draftNote && <div className={`bb-draft-note ${draftNote.ok ? 'ok' : 'err'}`}>{draftNote.text}</div>}
-        </div>
+        )}
 
-        <div className="bb-section">Personality</div>
-        {A('Look', 'look', 'tall, silver-dyed hair, dark eyes, athletic build…', undefined, 2, 'look')}
-        {A('Vibe', 'vibe', 'dry-witted night-owl DJ, teasing but warm underneath…', undefined, 2, 'vibe')}
-        {T('Loves', 'loves', 'vinyl crates, synthwave, 3am food runs', undefined, 'loves')}
-        {A('Relationship', 'relationship', 'how she knows Corey / the dynamic', undefined, 2, 'relationship')}
-        {A('Backstory', 'backstory', 'a few lines of history', undefined, 2, 'backstory')}
+        {show(0) && (
+          <>
+            {!editing && (
+              <>
+                <div className="bb-section bb-section-row">
+                  <span>Start from a specimen</span>
+                  <button className="bb-surprise" type="button" onClick={surpriseMe}>
+                    🎲 Surprise me
+                  </button>
+                </div>
+                <ArchetypeGallery onUse={(a) => useArchetype(a)} />
+              </>
+            )}
 
-        <div className="bb-section">Voice</div>
-        {A('Speech style', 'speechStyle', 'one bullet per line\nlowercase, dry one-liners\nmusic references everywhere', 'one per line', 3, 'speechStyle')}
-        {A('Opener ideas', 'openerIdeas', 'one per line\njust finished a set and is wired\nfound a record he would love', 'one per line', 3, 'openerIdeas')}
-        {A('Hard rules', 'hardRules', 'optional — one per line\nteases but never mean', 'optional, one per line', 2)}
+            <div className="bb-section">Identity</div>
+            {T('Display name', 'displayName', 'Nova', slug ? `saved as: ${slug}` : 'type a name to generate the slug')}
+            <label className="bb-field bb-age">
+              <span className="bb-label">Age</span>
+              <input type="number" min={18} value={f.age} onChange={set('age')} />
+            </label>
 
-        <div className="bb-section">Photo pipeline</div>
-        {T('Identity', 'photoIdentity', 'woman, 22, silver hair, athletic', 'structured — no age-coded terms', 'photoIdentity')}
-        {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck', undefined, 'photoOutfit')}
-        {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight', undefined, 'photoShot')}
+            <div className="bb-section">Draft with AI</div>
+            <div className="bb-ai">
+              <label className="bb-field">
+                <span className="bb-label">Concept</span>
+                <input
+                  value={concept}
+                  onChange={(e) => setConcept(e.target.value)}
+                  placeholder="one line, e.g. “flirty australian DJ who loves late sets”"
+                />
+                <span className="bb-hint">a local model fills the personality below from the name + concept — you edit everything before saving</span>
+              </label>
+              <SpiceDial value={spice} onChange={setSpice} />
+              <div className="bb-ai-row">
+                <button className="bb-draft" type="button" disabled={drafting} onClick={() => void doDraft()}>
+                  {drafting ? 'Drafting…' : locks.size > 0 ? '✨ Draft (keep locked)' : '✨ Draft with AI'}
+                </button>
+              </div>
+              {draftNote && <div className={`bb-draft-note ${draftNote.ok ? 'ok' : 'err'}`}>{draftNote.text}</div>}
+            </div>
 
-        <label className="bb-field">
-          <span className="bb-label">Apparent age (adult)</span>
-          <ApparentAge onChange={onApparentAge} />
-        </label>
+            <div className="bb-section">Personality</div>
+            {A('Look', 'look', 'tall, silver-dyed hair, dark eyes, athletic build…', undefined, 2, 'look')}
+            {A('Vibe', 'vibe', 'dry-witted night-owl DJ, teasing but warm underneath…', undefined, 2, 'vibe')}
+            {T('Loves', 'loves', 'vinyl crates, synthwave, 3am food runs', undefined, 'loves')}
+            {A('Relationship', 'relationship', 'how she knows Corey / the dynamic', undefined, 2, 'relationship')}
+            {A('Backstory', 'backstory', 'a few lines of history', undefined, 2, 'backstory')}
+          </>
+        )}
 
-        <label className="bb-field">
-          <span className="bb-label">Skin & detail</span>
-          <SkinDetail onChange={onSkin} />
-        </label>
+        {show(1) && (
+          <>
+            <div className="bb-section">Voice</div>
+            {A('Speech style', 'speechStyle', 'one bullet per line\nlowercase, dry one-liners\nmusic references everywhere', 'one per line', 3, 'speechStyle')}
+            {A('Opener ideas', 'openerIdeas', 'one per line\njust finished a set and is wired\nfound a record he would love', 'one per line', 3, 'openerIdeas')}
+            {A('Hard rules', 'hardRules', 'optional — one per line\nteases but never mean', 'optional, one per line', 2)}
+          </>
+        )}
+
+        {show(2) && (
+          <>
+            <div className="bb-section">Photo pipeline</div>
+
+            <label className="bb-field">
+              <span className="bb-label">Appearance</span>
+              <span className="bb-hint">pick or type — these compose her identity for you</span>
+              <PhotoPickers onChange={onAppearance} />
+            </label>
+
+            {T('Identity', 'photoIdentity', 'anything the pickers don’t cover', 'optional — extra tokens, merged with the pickers above', 'photoIdentity')}
+            {T('Outfit', 'photoOutfit', 'oversized band tee, headphones round neck', undefined, 'photoOutfit')}
+            {T('Shot', 'photoShot', 'leaning on a DJ booth, neon backlight', undefined, 'photoShot')}
+
+            <label className="bb-field">
+              <span className="bb-label">Apparent age</span>
+              <ApparentAge onChange={onApparentAge} />
+            </label>
+
+            <label className="bb-field">
+              <span className="bb-label">Bust & body</span>
+              <BodyShape onChange={onBody} />
+            </label>
+
+            <label className="bb-field">
+              <span className="bb-label">Skin & detail</span>
+              <SkinDetail onChange={onSkin} />
+            </label>
+
+            <div className="bb-readout">
+              <div className="bb-readout-head">
+                <span>Composed identity prompt</span>
+                <span className="bb-readout-live">live</span>
+              </div>
+              <code>{spec.photo.identity || 'start picking above — her identity assembles here'}</code>
+            </div>
+          </>
+        )}
+
+        {show(3) && (
+          <>
+            <div className="bb-section">Meet her</div>
+            <p className="bb-hint">
+              She’s {comp.pct}% fleshed out. Generate a face on the right and pick your favourite — it saves as her
+              reference so her photos stay on-face. Then Create her and say <code>/be {slug || '<slug>'}</code> in chat.
+            </p>
+          </>
+        )}
 
         <div className="bb-actions">
-          <button className="bb-check" type="button" disabled={busy} onClick={() => void doPreview()}>
-            {busy ? 'Checking…' : 'Preview / check'}
-          </button>
-          {editing && (
-            <button className="bb-check" type="button" disabled={busy} onClick={cancelEdit}>
-              Cancel edit
+          {guided && step > 0 && (
+            <button className="bb-check" type="button" onClick={() => setStep(step - 1)}>
+              ← Back
             </button>
           )}
-          {editing ? (
-            <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doSave()}>
-              Save changes
+          {guided && step < 3 ? (
+            <button className="btn-primary" type="button" onClick={() => setStep(step + 1)}>
+              {NEXT_LABELS[step]}
             </button>
           ) : (
-            <button className="btn-primary" type="button" disabled={!canCreate} onClick={() => void doCreate()}>
-              Create {spec.displayName || 'companion'}
-            </button>
+            actionButtons
           )}
         </div>
       </div>
 
       <aside className="bb-preview">
+        <SpecimenCard
+          name={f.displayName}
+          age={f.age}
+          meta={cardMeta}
+          relationship={f.relationship}
+          tags={cardTags}
+          accent={accent}
+          pct={comp.pct}
+          missing={comp.missing}
+          contradictions={contradictions}
+          accentName={activeArch?.accentName}
+        />
+
         <BuilderRoster refreshKey={rosterKey} editingSlug={editing?.slug ?? null} onEdit={(s, h) => void startEdit(s, h)} />
 
         <div className="bb-section">Profile portrait</div>
