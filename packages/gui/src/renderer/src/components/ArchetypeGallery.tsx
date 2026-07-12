@@ -4,6 +4,7 @@
 // enough to cover the spectrum, few enough to scan without re-creating blank-page dread.
 import { useState, type CSSProperties } from 'react'
 import { ARCHETYPES, type Archetype } from '../data/persona'
+import { archetypeFace } from '../data/archetypeFaces'
 
 export function ArchetypeGallery({ onUse }: { onUse: (a: Archetype) => void }) {
   const [flipped, setFlipped] = useState<Set<string>>(new Set())
@@ -37,7 +38,9 @@ export function ArchetypeGallery({ onUse }: { onUse: (a: Archetype) => void }) {
           <div className="bb-flip-inner">
             <div className="bb-face bb-front">
               <span className="bb-flip-hint">↻</span>
-              <div className="bb-flip-portrait" data-mono={a.mono} />
+              <div className={`bb-flip-portrait ${archetypeFace(a.id) ? 'has-face' : ''}`} data-mono={a.mono}>
+                {archetypeFace(a.id) && <img src={archetypeFace(a.id)} alt="" loading="lazy" />}
+              </div>
               <div className="bb-flip-name">
                 <b>{a.name}</b>
                 <span>{a.kind}</span>
