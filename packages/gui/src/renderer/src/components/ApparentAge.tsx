@@ -43,8 +43,8 @@ export function ApparentAge({ onChange }: { onChange: (phrase: string) => void }
       </div>
       <span className="bb-hint">
         {key
-          ? 'nudges how old she photographs — the numeric age + 18+ rules are unchanged.'
-          : 'photoreal models often render any age as 30-something — pick a look so she photographs her intended age. Floored at a youthful adult; it only moves up.'}
+          ? 'nudges how old she photographs.'
+          : 'photoreal models often render any age as 30-something — pick a look so she photographs the age you intend.'}
       </span>
     </div>
   )
