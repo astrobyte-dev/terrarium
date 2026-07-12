@@ -11,6 +11,7 @@ import { SpecimenCard } from './SpecimenCard'
 import { ArchetypeGallery } from './ArchetypeGallery'
 import { SpiceDial, spiceToMode } from './SpiceDial'
 import { ARCHETYPES, type Archetype, completeness, findContradictions, signatureAccent } from '../data/persona'
+import { archetypeFace } from '../data/archetypeFaces'
 
 interface Form {
   displayName: string
@@ -614,6 +615,7 @@ export function BotBuilderScreen({
           missing={comp.missing}
           contradictions={contradictions}
           accentName={activeArch?.accentName}
+          face={activeArch ? archetypeFace(activeArch.id) : undefined}
         />
 
         <BuilderRoster refreshKey={rosterKey} editingSlug={editing?.slug ?? null} onEdit={(s, h) => void startEdit(s, h)} />

@@ -14,9 +14,10 @@ export interface SpecimenCardProps {
   missing: string[]
   contradictions: string[]
   accentName?: string
+  face?: string
 }
 
-export function SpecimenCard({ name, age, meta, relationship, tags, accent, pct, missing, contradictions, accentName }: SpecimenCardProps) {
+export function SpecimenCard({ name, age, meta, relationship, tags, accent, pct, missing, contradictions, accentName, face }: SpecimenCardProps) {
   const clean = (name || '').trim() || 'New companion'
   const mono = clean[0] ? clean[0].toUpperCase() : 'N'
   const style = { '--sig': accent } as CSSProperties
@@ -27,7 +28,9 @@ export function SpecimenCard({ name, age, meta, relationship, tags, accent, pct,
       <div className="bb-spec-card">
         <span className="bb-spec-foil" />
         <div className="bb-spec-top">
-          <div className="bb-spec-portrait" data-mono={mono} />
+          <div className={`bb-spec-portrait ${face ? 'has-face' : ''}`} data-mono={mono}>
+            {face && <img src={face} alt="" />}
+          </div>
           <div className="bb-spec-id">
             <div className="bb-spec-name">{clean}</div>
             <div className="bb-spec-meta">
