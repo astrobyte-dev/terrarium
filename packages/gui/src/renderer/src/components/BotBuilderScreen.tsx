@@ -182,7 +182,7 @@ export function BotBuilderScreen({
     setRerolling(k)
     try {
       const r = await window.terrarium.bots.draftField(
-        { displayName: name, age: Number.parseInt(f.age, 10) || 18, concept: idea, mode },
+        { displayName: name, age: Number.parseInt(f.age, 10) || 18, concept: idea, mode, spice },
         k,
       )
       if (r.ok && r.value !== undefined) {
@@ -217,6 +217,7 @@ export function BotBuilderScreen({
         age: Number.parseInt(f.age, 10) || 18,
         concept: idea,
         mode,
+        spice,
       })
       if (r.ok && r.persona) {
         // Respect locks: a 🔒 field keeps its current value through a (re)draft.

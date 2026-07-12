@@ -177,6 +177,8 @@ export interface DraftSeedInput {
   age: number
   concept: string
   mode: DraftMode
+  /** 0–4 spice dial; overrides `mode` for draft tone when present. */
+  spice?: number
 }
 export interface DraftedPersonaView {
   look: string
