@@ -35,9 +35,6 @@ function FaceContent({
             <i key={t}>{t}</i>
           ))}
         </div>
-        <button className="bb-use-start" type="button" onClick={() => onUse(a)}>
-          Use this start →
-        </button>
       </div>
     )
   }
@@ -143,6 +140,16 @@ function FlipCard({ a, onUse }: { a: Archetype; onUse: (a: Archetype) => void })
           <i key={s} className={s === state ? 'on' : ''} />
         ))}
       </div>
+      <button
+        className="bb-use-start bb-use-footer"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          onUse(a)
+        }}
+      >
+        Use this start →
+      </button>
     </div>
   )
 }

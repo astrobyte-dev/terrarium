@@ -2447,9 +2447,9 @@
 /* ---- archetype flip cards ---- */
 .bb-arch-grid {
   display: grid;
-  /* Responsive: small cards that pack more per row as the window widens, instead of 3
-     oversized columns on a fullscreen build. Also reflows the 10th card cleanly. */
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  /* Responsive middle ground: comfortably-sized cards that wrap to a couple of rows,
+     rather than 3 oversized columns (too big) or a single cramped row (too small). */
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }
@@ -2624,6 +2624,14 @@
   font: 700 0.62rem/1 var(--f-ui);
   padding: 6px;
   cursor: pointer;
+}
+.bb-use-start:hover {
+  filter: brightness(1.08);
+}
+/* persistent per-card Use button (always visible under the card, no flip needed) */
+.bb-use-footer {
+  width: 100%;
+  padding: 8px 6px;
 }
 
 /* ---- spice dial ---- */
