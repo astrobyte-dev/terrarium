@@ -18,6 +18,9 @@ const INTO = [
   'passionate & romantic',
   'exhibitionism',
   'spanking',
+  'feet & soles',
+  'foot worship',
+  'spit & drool',
 ]
 
 const LIMITS = [
