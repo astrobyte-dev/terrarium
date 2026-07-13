@@ -2447,7 +2447,9 @@
 /* ---- archetype flip cards ---- */
 .bb-arch-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* Responsive: small cards that pack more per row as the window widens, instead of 3
+     oversized columns on a fullscreen build. Also reflows the 10th card cleanly. */
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
   gap: 0.5rem;
   margin-bottom: 0.4rem;
 }
