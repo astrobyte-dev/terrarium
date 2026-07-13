@@ -10,6 +10,7 @@ import { BuilderRoster } from './BuilderRoster'
 import { SpecimenCard } from './SpecimenCard'
 import { ArchetypeGallery } from './ArchetypeGallery'
 import { SpiceDial, spiceToMode } from './SpiceDial'
+import { KinkProfile } from './KinkProfile'
 import { ARCHETYPES, type Archetype, completeness, findContradictions, signatureAccent } from '../data/persona'
 import { archetypeFace } from '../data/archetypeFaces'
 
@@ -71,7 +72,7 @@ function specToForm(spec: BotSpecInput): Form {
 // and /pic carry them; joined here so buildSpec stays the single source of the string.
 const joinIdentity = (...parts: string[]) => parts.map((p) => p.trim()).filter(Boolean).join(', ')
 
-function buildSpec(f: Form, photoExtra = ''): BotSpecInput {
+function buildSpec(f: Form, photoExtra = '', kinkExtra = ''): BotSpecInput {
   return {
     slug: deriveSlug(f.displayName),
     displayName: f.displayName.trim(),
@@ -83,7 +84,8 @@ function buildSpec(f: Form, photoExtra = ''): BotSpecInput {
     backstory: f.backstory.trim(),
     speechStyle: lines(f.speechStyle),
     openerIdeas: lines(f.openerIdeas),
-    hardRules: lines(f.hardRules),
+    // Intimacy profile (if any) rides in her hard rules so the brain honours the limits.
+    hardRules: [...lines(f.hardRules), ...lines(kinkExtra)],
     photo: { identity: joinIdentity(f.photoIdentity, photoExtra), outfit: f.photoOutfit.trim(), shot: f.photoShot.trim() },
   }
 }
@@ -117,6 +119,7 @@ export function BotBuilderScreen({
   const [apparentAge, setApparentAge] = useState('')
   const [body, setBody] = useState('')
   const [appearance, setAppearance] = useState('')
+  const [kink, setKink] = useState('')
   const [zoom, setZoom] = useState<string | null>(null)
   const [editing, setEditing] = useState<{ slug: string; heading: string } | null>(null)
   const [rosterKey, setRosterKey] = useState(0)
@@ -124,6 +127,7 @@ export function BotBuilderScreen({
   const onApparentAge = useCallback((phrase: string) => setApparentAge(phrase), [])
   const onBody = useCallback((phrase: string) => setBody(phrase), [])
   const onAppearance = useCallback((phrase: string) => setAppearance(phrase), [])
+  const onKink = useCallback((text: string) => setKink(text), [])
   // appearance leads (ethnicity/hair/eyes carry the identity), then figure, age, skin.
   const photoExtra = joinIdentity(appearance, apparentAge, body, skin)
 
@@ -294,7 +298,7 @@ export function BotBuilderScreen({
     setDraftNote({ ok: true, text: `🎲 Surprised you with ${a.name}, the ${a.kind.toLowerCase()} — edit her, or ✨ Draft to go deeper.` })
   }
 
-  const spec = buildSpec(f, photoExtra)
+  const spec = buildSpec(f, photoExtra, kink)
   const slug = spec.slug
   const comp = completeness(spec)
   const contradictions = findContradictions(f.look, spec.photo.identity)
@@ -512,6 +516,7 @@ export function BotBuilderScreen({
                 <span className="bb-hint">a local model fills the personality below from the name + concept — you edit everything before saving</span>
               </label>
               <SpiceDial value={spice} onChange={setSpice} />
+              <KinkProfile spice={spice} onChange={onKink} />
               <div className="bb-ai-row">
                 <button className="bb-draft" type="button" disabled={drafting} onClick={() => void doDraft()}>
                   {drafting ? 'Drafting…' : locks.size > 0 ? '✨ Draft (keep locked)' : '✨ Draft with AI'}
