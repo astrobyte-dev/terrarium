@@ -1498,6 +1498,58 @@
 .chat-img:hover {
   filter: brightness(1.06);
 }
+
+/* slow tease — blur-reveal on her photos (toggled by the 🔥 header button) */
+.teased {
+  position: relative;
+  display: inline-block;
+  border-radius: 14px;
+  overflow: hidden;
+  line-height: 0;
+}
+.teased .chat-img {
+  filter: blur(24px) saturate(0.85) brightness(0.82);
+  transition: filter 0.7s ease;
+  cursor: pointer;
+}
+.teased.revealed .chat-img {
+  filter: none;
+  cursor: zoom-in;
+}
+.teased-veil {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 1rem;
+  background: color-mix(in srgb, #000 28%, transparent);
+  color: #ffffff;
+}
+.teased-caption {
+  font: 600 0.98rem/1.35 var(--f-display);
+  text-align: center;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.55);
+}
+.teased-cta {
+  font: 700 0.62rem/1 var(--f-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
+@media (prefers-reduced-motion: reduce) {
+  .teased .chat-img {
+    transition: none;
+  }
+}
+.tease-toggle.on {
+  background: color-mix(in srgb, var(--crit) 22%, transparent);
+  border-color: var(--crit);
+}
 .msg-row.assistant .msg-media .bubble.caption {
   border-bottom-left-radius: 15px;
   font-size: 0.88rem;

@@ -6,6 +6,7 @@ import { Lightbox } from './Lightbox'
 import { MessageReactions } from './MessageReactions'
 import { ProactiveMenu } from './ProactiveMenu'
 import { MemoryModal } from './MemoryModal'
+import { TeasedImage } from './TeasedImage'
 
 // A stable-enough key for a message to hang a reaction / deletion on (no server IDs).
 const msgKey = (m: ChatMsg) => `${m.role}|${m.ts ?? 0}|${(m.text ?? '').slice(0, 50)}`
@@ -110,6 +111,13 @@ export function ChatScreen({
   const [draft, setDraft] = useState('')
   const [menuOpen, setMenuOpen] = useState(false)
   const [memoryOpen, setMemoryOpen] = useState(false)
+  const [teaseMode, setTeaseMode] = useState(() => localStorage.getItem('terrarium.teaseMode') === '1')
+  const toggleTease = () =>
+    setTeaseMode((v) => {
+      const next = !v
+      localStorage.setItem('terrarium.teaseMode', next ? '1' : '0')
+      return next
+    })
   const [names, setNames] = useState<Record<string, string>>({})
   const [roster, setRoster] = useState<{ slug: string; name: string }[]>([])
   // Locally hidden messages (delete / clear). GUI-side only — the shared brain still
@@ -287,6 +295,16 @@ export function ChatScreen({
           </svg>
         </button>
         <ProactiveMenu />
+        <button
+          type="button"
+          className={`chat-clear tease-toggle ${teaseMode ? 'on' : ''}`}
+          title={teaseMode ? 'Slow tease is ON — her photos arrive teased' : 'Slow tease: reveal her photos slowly'}
+          aria-label="Slow tease"
+          aria-pressed={teaseMode}
+          onClick={toggleTease}
+        >
+          🔥
+        </button>
         {visible.length > 0 &&
           (clearConfirm ? (
             <span className="chat-clear-confirm">
@@ -334,17 +352,26 @@ export function ChatScreen({
                 <div className="msg-bubble-wrap">
                 {m.images && m.images.length > 0 ? (
                   <div className="msg-media">
-                    {m.images.map((src) => (
-                      <img
-                        key={src}
-                        className="chat-img"
-                        src={src}
-                        alt={m.text || `photo from ${who}`}
-                        loading="lazy"
-                        onClick={() => setZoomIdx(allImages.indexOf(src))}
-                        title="Click to enlarge"
-                      />
-                    ))}
+                    {m.images.map((src) =>
+                      teaseMode && m.role === 'assistant' ? (
+                        <TeasedImage
+                          key={src}
+                          src={src}
+                          alt={m.text || `photo from ${who}`}
+                          onZoom={() => setZoomIdx(allImages.indexOf(src))}
+                        />
+                      ) : (
+                        <img
+                          key={src}
+                          className="chat-img"
+                          src={src}
+                          alt={m.text || `photo from ${who}`}
+                          loading="lazy"
+                          onClick={() => setZoomIdx(allImages.indexOf(src))}
+                          title="Click to enlarge"
+                        />
+                      ),
+                    )}
                     {m.text && <div className="bubble caption">{m.text}</div>}
                     {connected && (m.command || i === lastImageIdx) && (
                       <div className="pic-actions">
