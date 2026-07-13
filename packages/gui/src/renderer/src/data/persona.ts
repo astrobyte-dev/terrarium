@@ -97,7 +97,17 @@ export interface Archetype {
   relationship: string
   bio: string
   tags: string[]
-  seed: { concept: string; vibe: string; loves: string; relationship: string; look: string; backstory: string }
+  seed: {
+    concept: string
+    vibe: string
+    loves: string
+    relationship: string
+    look: string
+    backstory: string
+    // Optional default photo framing (e.g. a candid/voyeur look), seeded into her card
+    // so her /pic shots carry the theme without hand-typing it each time.
+    photoShot?: string
+  }
 }
 
 export const ARCHETYPES: Archetype[] = [
@@ -164,6 +174,21 @@ export const ARCHETYPES: Archetype[] = [
     tags: ['poised', 'commanding', 'secretly soft'],
     seed: { concept: 'poised corporate exec who finally exhales when the blazer comes off', vibe: 'commanding, composed, secretly soft with you', loves: 'good scotch, city views, tailored suits, quiet wins', relationship: 'your after-work unwind', look: 'black woman, rich dark brown skin, high sculpted cheekbones, sleek bob, tailored blazer, poised and elegant', backstory: 'Built the company from nothing; trusts almost no one — except you.' },
   },
+  {
+    id: 'voyeur', name: 'Mira', kind: 'The Watched', accent: '#b16d8f', accentName: 'Dusk Rose', mono: 'M',
+    meta: 'leaves the curtains open on purpose', relationship: 'your secret to watch',
+    bio: 'Knows you’re watching — and plays it perfectly. Curtains open, “unaware,” never once looking at the lens. She’s fully in on the game.',
+    tags: ['exhibitionist', 'teasing', 'in on it'],
+    seed: {
+      concept: 'a playful exhibitionist who loves being secretly watched and performs the "you\'re spying on me" fantasy — an adult, fully in on the game and enjoying every second',
+      vibe: 'teasing and knowing; pretends not to notice you watching, but she set the whole scene up',
+      loves: 'being watched, "accidental" angles, undressing by the window, stretching where you can see, the thrill of almost-caught',
+      relationship: 'your secret to watch',
+      look: 'mediterranean, olive skin, long dark wavy hair, hazel eyes, soft curvy figure',
+      backstory: 'She knows your eyes are on her and she’d never admit it — that’s the fun. The curtains stay open on purpose.',
+      photoShot: 'candid unposed snapshot, looking away from the camera, never looking at the lens, caught-unaware voyeur angle (from across the room / a doorway / behind her), natural setting — home, gym, bedroom — amateur phone-photo feel',
+    },
+  },
 ]
 
 // Outfit per archetype for on-demand face re-rolls, so a regenerated face stays clothed
@@ -178,4 +203,5 @@ export const ARCHETYPE_OUTFITS: Record<string, string> = {
   nextdoor: 'a cozy oversized hoodie',
   gamer: 'an oversized graphic tee',
   boss: 'a white collared blouse buttoned to the neck under a tailored blazer',
+  voyeur: 'an oversized shirt slipping off one shoulder',
 }

@@ -69,22 +69,35 @@ async function download(img: { filename: string; subfolder: string; type: string
   return Buffer.from(await res.arrayBuffer())
 }
 
+// Per-id framing overrides. Default is a posed portrait looking at the lens; some themes
+// (e.g. voyeur) want a candid, looking-away composition even on the browse card.
+const REAL_TAIL_DEFAULT = 'upper body portrait, looking at viewer, detailed face, natural skin, fully clothed, soft studio lighting, plain neutral background'
+const ANIME_TAIL_DEFAULT = 'upper body portrait, looking at viewer, detailed face, clean simple background'
+const STYLE_TAIL: Record<string, { real: string; anime: string }> = {
+  voyeur: {
+    real: 'candid photo, looking away from the camera, not looking at viewer, three-quarter view, at home by a window, natural unposed pose, soft daylight, detailed face, natural skin, fully clothed',
+    anime: 'candid, looking away from camera, not looking at viewer, three-quarter view, at home by a window, natural unposed pose, detailed face, fully clothed',
+  },
+}
+
 async function render(id: string, look: string, kind: 'realistic' | 'anime', seed: number): Promise<boolean> {
   const outfit = OUTFITS[id] ?? 'wearing stylish clothing'
   const variant = VARIANTS[id] ?? 'oval face shape'
   const boost = ETHNIC[id] ? `(${ETHNIC[id]}:1.5), ` : ''
+  const realTail = STYLE_TAIL[id]?.real ?? REAL_TAIL_DEFAULT
+  const animeTail = STYLE_TAIL[id]?.anime ?? ANIME_TAIL_DEFAULT
   const workflow =
     kind === 'anime'
       ? buildTxt2ImgWorkflow({
           checkpoint: ANIME_CHECKPOINTS.default,
-          positive: `${ANIME_PREFIX}${boost}(${look}:1.1), ${variant}, ${outfit}, upper body portrait, looking at viewer, detailed face, clean simple background`,
+          positive: `${ANIME_PREFIX}${boost}(${look}:1.1), ${variant}, ${outfit}, ${animeTail}`,
           negative: ANIME_NEG,
           width: 576, height: 768, steps: 28, cfg: 6, samplerName: 'euler_ancestral', scheduler: 'normal',
           seed, batchSize: 1, filenamePrefix: 'terrarium_archetype_anime',
         })
       : buildTxt2ImgWorkflow({
           checkpoint: PHOTOREAL_CHECKPOINT,
-          positive: `score_9, score_8_up, score_7_up, photorealistic, raw photo, 1girl, solo, ${boost}(${look}, adult woman, 24:1.3), ${variant}, ${outfit}, upper body portrait, looking at viewer, detailed face, natural skin, fully clothed, soft studio lighting, plain neutral background`,
+          positive: `score_9, score_8_up, score_7_up, photorealistic, raw photo, 1girl, solo, ${boost}(${look}, adult woman, 24:1.3), ${variant}, ${outfit}, ${realTail}`,
           negative: PHOTO_NEG,
           width: 576, height: 768, steps: 22, cfg: 6, samplerName: 'dpmpp_2m', scheduler: 'karras',
           seed, batchSize: 1, filenamePrefix: 'terrarium_archetype',
