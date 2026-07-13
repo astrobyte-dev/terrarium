@@ -286,6 +286,7 @@ export function BotBuilderScreen({
       relationship: take(prev.relationship, a.seed.relationship),
       look: take(prev.look, a.seed.look),
       backstory: take(prev.backstory, a.seed.backstory),
+      photoShot: a.seed.photoShot ? take(prev.photoShot, a.seed.photoShot) : prev.photoShot,
     }))
     setPreview(null)
     setNote(null)
