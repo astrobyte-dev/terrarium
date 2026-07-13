@@ -3,7 +3,7 @@ import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { ipcMain } from 'electron'
 import { PHOTOREAL_CHECKPOINT, buildTxt2ImgWorkflow, renderImage, type RenderedImage } from '@terrarium/core'
-import type { PortraitGenInput, PortraitGenResult, PortraitSaveResult } from '../shared/contract'
+import type { ArchetypeRegenResult, PortraitGenInput, PortraitGenResult, PortraitSaveResult } from '../shared/contract'
 
 // Candidate profile portraits for the Bot Builder, rendered on the same ComfyUI the
 // photo pipeline uses. The chosen one becomes the character's face reference
@@ -109,13 +109,45 @@ async function downloadComfy(img: RenderedImage): Promise<Buffer | null> {
 function prune(): void {
   try {
     const pngs = readdirSync(PORTRAITS_DIR)
-      .filter((f) => f.endsWith('.png'))
+      // archetype_* are persistent starter-card overrides — never prune them.
+      .filter((f) => f.endsWith('.png') && !f.startsWith('archetype_'))
       .map((f) => ({ f, m: statSync(join(PORTRAITS_DIR, f)).mtimeMs }))
       .sort((a, b) => a.m - b.m)
     for (const { f } of pngs.slice(0, Math.max(0, pngs.length - KEEP))) unlinkSync(join(PORTRAITS_DIR, f))
   } catch {
     /* best effort */
   }
+}
+
+// A single CLOTHED archetype face from a supplied look + outfit. Mirrors the offline
+// gen script's guardrails (outfit token + nudity pushed out) so a re-roll stays on-brand.
+const ARCH_NEGATIVE =
+  NEGATIVE + ', nude, topless, bare shoulders, cleavage, lingerie, plunging neckline, unbuttoned, revealing outfit'
+
+function archetypeWorkflow(look: string, outfit: string) {
+  const brief = look.trim()
+  const positive = [
+    'score_9, score_8_up, score_7_up, photorealistic, raw photo, 1girl, solo',
+    `(${brief}, adult woman, 24:1.35)`,
+    outfit.trim() ? `wearing ${outfit.trim()}` : '',
+    'upper body portrait, looking at viewer, detailed face, natural skin, fully clothed, soft studio lighting, plain neutral background',
+  ]
+    .filter(Boolean)
+    .join(', ')
+  return buildTxt2ImgWorkflow({
+    checkpoint: PHOTOREAL_CHECKPOINT,
+    positive,
+    negative: ARCH_NEGATIVE,
+    width: 576,
+    height: 768,
+    steps: 22,
+    cfg: 6,
+    samplerName: 'dpmpp_2m',
+    scheduler: 'karras',
+    seed: Math.floor(Math.random() * 1_000_000_000),
+    batchSize: 1,
+    filenamePrefix: 'terrarium_archetype',
+  })
 }
 
 export function setupPortraits(): void {
@@ -161,6 +193,28 @@ export function setupPortraits(): void {
       return { ok: false, message: e instanceof Error ? e.message : String(e) }
     }
   })
+
+  // Re-roll ONE starter-card face on demand. Saved under a stable archetype_<id>.png
+  // (excluded from pruning) and served via the existing portraits scheme; the returned
+  // URL has a cache-buster so the card picks up the overwrite.
+  ipcMain.handle(
+    'portraits:regenerateArchetype',
+    async (_e, id: string, look: string, outfit: string): Promise<ArchetypeRegenResult> => {
+      if (!/^[a-z0-9-]+$/.test(id)) return { ok: false, error: 'bad archetype id' }
+      try {
+        const r = await renderImage(COMFY, archetypeWorkflow(look, outfit), { timeoutMs: 240_000 })
+        if (!r.ok || r.images.length === 0) {
+          return { ok: false, error: r.message || 'render returned no image (is ComfyUI running on 8188?)' }
+        }
+        const bytes = await downloadComfy(r.images[0]!)
+        if (!bytes) return { ok: false, error: 'could not download the render' }
+        writeFileSync(join(PORTRAITS_DIR, `archetype_${id}.png`), bytes)
+        return { ok: true, url: `terrarium://portraits/archetype_${id}.png?t=${Date.now()}` }
+      } catch (e) {
+        return { ok: false, error: e instanceof Error ? e.message : String(e) }
+      }
+    },
+  )
 }
 
 /** Resolve terrarium://portraits/<name> to an absolute path INSIDE the portraits dir. */

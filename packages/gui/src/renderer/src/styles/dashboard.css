@@ -187,7 +187,7 @@
   justify-content: center;
   border-radius: 999px;
   background: var(--accent);
-  color: #04140c;
+  color: var(--accent-ink);
   font: 700 0.68rem/1 var(--f-ui);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
   animation: badge-pop 0.22s ease-out;
@@ -2400,11 +2400,15 @@
   margin-bottom: 0.4rem;
 }
 .bb-flip {
+  position: relative;
   background: none;
   border: 0;
   padding: 0;
   cursor: pointer;
   perspective: 800px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
 }
 .bb-flip-inner {
   position: relative;
@@ -2412,9 +2416,6 @@
   aspect-ratio: 3 / 4;
   transform-style: preserve-3d;
   transition: transform 0.5s cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-.bb-flip.flipped .bb-flip-inner {
-  transform: rotateY(180deg);
 }
 .bb-face {
   position: absolute;
@@ -2424,11 +2425,71 @@
   overflow: hidden;
   border: 1px solid var(--edge);
   text-align: left;
+  background: color-mix(in oklab, var(--c) 14%, var(--surface));
 }
-.bb-front {
+.bb-face-a {
+  transform: rotateY(0deg);
+}
+.bb-face-b {
+  transform: rotateY(180deg);
+}
+.bb-face-portrait {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  background: color-mix(in oklab, var(--c) 16%, var(--surface));
+}
+.bb-face-body {
+  position: absolute;
+  inset: 0;
+  padding: 7px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--surface);
+}
+.bb-flip-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.bb-flip-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--edge-strong);
+  transition: background 0.2s;
+}
+.bb-flip-dots i.on {
+  background: var(--c);
+}
+.bb-reroll {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  z-index: 3;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 0;
+  cursor: pointer;
+  font-size: 0.8rem;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, #000 45%, transparent);
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.bb-flip:hover .bb-reroll,
+.bb-reroll:focus-visible,
+.bb-reroll:disabled {
+  opacity: 1;
+}
+.bb-reroll:disabled {
+  cursor: wait;
 }
 .bb-flip-portrait {
   flex: 1;
@@ -2482,15 +2543,7 @@
   color: color-mix(in oklab, #ffffff 70%, var(--c));
   opacity: 0.85;
 }
-.bb-back {
-  transform: rotateY(180deg);
-  background: var(--surface);
-  padding: 7px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-.bb-back p {
+.bb-face-body p {
   margin: 0;
   font: 0.66rem/1.35 var(--f-ui);
   color: var(--ink-soft);
@@ -2581,6 +2634,40 @@
 .bb-lock.on {
   border-color: var(--accent);
   background: color-mix(in oklab, var(--accent) 18%, transparent);
+}
+
+/* ---- intimacy / kink profile ---- */
+.bb-kink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-sm);
+  background: color-mix(in oklab, var(--crit) 6%, var(--surface-2));
+}
+.bb-kink-locked {
+  gap: 0.2rem;
+  opacity: 0.7;
+}
+.bb-kink-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.bb-kink-head {
+  font: 700 0.62rem/1 var(--f-ui);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.bb-kink-head-limit {
+  color: color-mix(in oklab, var(--crit) 70%, var(--ink-faint));
+}
+.bb-chip-limit.on {
+  background: var(--crit);
+  border-color: var(--crit);
+  color: #ffffff;
 }
 
 /* ---- living specimen card ---- */

@@ -2,6 +2,7 @@
 import type {
   ActionRequest,
   ActionResult,
+  ArchetypeRegenResult,
   BotCreateResult,
   BotPreview,
   BotSpecInput,
@@ -98,6 +99,7 @@ declare global {
       portraits: {
         generate: (input: PortraitGenInput) => Promise<PortraitGenResult>
         saveRef: (slug: string, url: string) => Promise<PortraitSaveResult>
+        regenerateArchetype: (id: string, look: string, outfit: string) => Promise<ArchetypeRegenResult>
       }
     }
   }

@@ -134,14 +134,14 @@ export const ARCHETYPES: Archetype[] = [
     meta: 'half-moon glasses, endless margins', relationship: 'your late-night tutor',
     bio: 'Half-moon glasses, margins full of notes, an unreasonable weakness for terrible puns.',
     tags: ['precise', 'curious', 'deadpan'],
-    seed: { concept: 'deadpan academic with half-moon glasses and a pun problem', vibe: 'precise, curious, dryly funny', loves: 'margin notes, strong tea, rare books, bad puns', relationship: 'your late-night tutor', look: 'half-moon glasses, hair in a loose bun, cardigan', backstory: 'Perpetually one deadline from finishing her second book.' },
+    seed: { concept: 'deadpan academic with half-moon glasses and a pun problem', vibe: 'precise, curious, dryly funny', loves: 'margin notes, strong tea, rare books, bad puns', relationship: 'your late-night tutor', look: 'south asian, warm brown skin, soft round face, large dark eyes, half-moon glasses, dark hair in a loose bun, knit cardigan', backstory: 'Perpetually one deadline from finishing her second book.' },
   },
   {
     id: 'lounge', name: 'Ember', kind: 'Lounge Singer', accent: '#e0894a', accentName: 'Terracotta', mono: 'E',
     meta: 'smoke-and-honey alto', relationship: 'your last call',
     bio: 'Smoke-and-honey alto who closes the bar every night and means every lyric she sings.',
     tags: ['sultry', 'wistful', 'charming'],
-    seed: { concept: 'smoke-and-honey lounge singer who closes the bar every night', vibe: 'sultry, wistful, disarmingly charming', loves: 'old standards, red wine, last calls, city rain', relationship: 'your last call', look: 'satin dress, dark waves, red lip, warm bronze skin', backstory: 'Sings other people’s heartbreak better than her own.' },
+    seed: { concept: 'smoke-and-honey lounge singer who closes the bar every night', vibe: 'sultry, wistful, disarmingly charming', loves: 'old standards, red wine, last calls, city rain', relationship: 'your last call', look: 'latina, deep bronze skin, strong defined jaw, sultry hooded eyes, full red lips, dark waves, satin evening dress', backstory: 'Sings other people’s heartbreak better than her own.' },
   },
   {
     id: 'nextdoor', name: 'Juno', kind: 'Girl Next Door', accent: '#e07986', accentName: 'Coral', mono: 'J',
@@ -155,13 +155,27 @@ export const ARCHETYPES: Archetype[] = [
     meta: 'ranked-grind sweetheart', relationship: 'your player two',
     bio: 'Ranked-grind sweetheart with a headset and a highlight reel — trash-talks, then shares her fries.',
     tags: ['playful', 'competitive', 'chronically online'],
-    seed: { concept: 'competitive gamer-streamer sweetheart who trash-talks then shares her fries', vibe: 'playful, quick, chronically online', loves: 'ranked climbs, energy drinks, indie games, late queues', relationship: 'your player two', look: 'headset, dyed streak, oversized tee, RGB glow', backstory: 'Grinding to partner; you are her lucky charm.' },
+    seed: { concept: 'competitive gamer-streamer sweetheart who trash-talks then shares her fries', vibe: 'playful, quick, chronically online', loves: 'ranked climbs, energy drinks, indie games, late queues', relationship: 'your player two', look: 'east asian, fair skin, round youthful face, monolid eyes, small nose, black hair with a dyed teal streak, gaming headset, oversized graphic tee', backstory: 'Grinding to partner; you are her lucky charm.' },
   },
   {
     id: 'boss', name: 'Cleo', kind: 'Boss · Exec', accent: '#c95a72', accentName: 'Wine', mono: 'C',
     meta: 'corner office, off the clock', relationship: 'your after-work unwind',
     bio: 'Corner office by day; loosens the blazer, pours two fingers of something good, and finally exhales.',
     tags: ['poised', 'commanding', 'secretly soft'],
-    seed: { concept: 'poised corporate exec who finally exhales when the blazer comes off', vibe: 'commanding, composed, secretly soft with you', loves: 'good scotch, city views, tailored suits, quiet wins', relationship: 'your after-work unwind', look: 'tailored blazer, sleek bob, sharp cheekbones, poised', backstory: 'Built the company from nothing; trusts almost no one — except you.' },
+    seed: { concept: 'poised corporate exec who finally exhales when the blazer comes off', vibe: 'commanding, composed, secretly soft with you', loves: 'good scotch, city views, tailored suits, quiet wins', relationship: 'your after-work unwind', look: 'black woman, rich dark brown skin, high sculpted cheekbones, sleek bob, tailored blazer, poised and elegant', backstory: 'Built the company from nothing; trusts almost no one — except you.' },
   },
 ]
+
+// Outfit per archetype for on-demand face re-rolls, so a regenerated face stays clothed
+// + on-brand. Mirrors the offline scripts/gen-archetype-faces.ts outfit list.
+export const ARCHETYPE_OUTFITS: Record<string, string> = {
+  goth: 'a black turtleneck',
+  fitness: 'an athletic tank top',
+  cottage: 'a floral linen dress',
+  cyber: 'a zipped techwear jacket',
+  academic: 'a knit cardigan over a blouse',
+  lounge: 'an elegant high-neck long-sleeve satin gown',
+  nextdoor: 'a cozy oversized hoodie',
+  gamer: 'an oversized graphic tee',
+  boss: 'a white collared blouse buttoned to the neck under a tailored blazer',
+}

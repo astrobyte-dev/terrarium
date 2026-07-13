@@ -1,64 +1,157 @@
-// Starter-specimen shelf for the Bot Builder — a curated 3×3 of archetypes. Front is a
-// portrait tile; tap flips to a bio + tags + "Use this start", which seeds the form and
-// paints the studio in that character's signature accent. A curated nine, on purpose:
-// enough to cover the spectrum, few enough to scan without re-creating blank-page dread.
+// Starter-specimen shelf for the Bot Builder — a curated 3×3 of archetypes. Each card is
+// a TRIPLE flip: tap to cycle photo → anime → details, and "Use this start" (on the
+// details face) seeds the form and paints the studio in that character's accent. The
+// photo face also carries a 🎲 re-roll that regenerates just that face via ComfyUI and
+// remembers it. A curated nine on purpose: enough to cover the spectrum, few to scan.
 import { useState, type CSSProperties } from 'react'
-import { ARCHETYPES, type Archetype } from '../data/persona'
-import { archetypeFace } from '../data/archetypeFaces'
+import { ARCHETYPES, ARCHETYPE_OUTFITS, type Archetype } from '../data/persona'
+import { archetypeFace, archetypeAnimeFace, getFaceOverride, setFaceOverride, clearFaceOverride } from '../data/archetypeFaces'
+
+const STATES = 3 // 0 = photo · 1 = anime · 2 = details
+
+function FaceContent({
+  a,
+  state,
+  onUse,
+  override,
+  rolling,
+  onReroll,
+  onImgError,
+}: {
+  a: Archetype
+  state: number
+  onUse: (a: Archetype) => void
+  override?: string
+  rolling: boolean
+  onReroll: (e: React.MouseEvent) => void
+  onImgError: () => void
+}) {
+  if (state === 2) {
+    return (
+      <div className="bb-face-body">
+        <p>{a.bio}</p>
+        <div className="bb-back-tags">
+          {a.tags.map((t) => (
+            <i key={t}>{t}</i>
+          ))}
+        </div>
+        <button className="bb-use-start" type="button" onClick={() => onUse(a)}>
+          Use this start →
+        </button>
+      </div>
+    )
+  }
+  const isPhoto = state === 0
+  const img = state === 1 ? archetypeAnimeFace(a.id) : (override ?? archetypeFace(a.id))
+  return (
+    <div className="bb-face-portrait">
+      <div className={`bb-flip-portrait ${img ? 'has-face' : ''}`} data-mono={a.mono}>
+        {img && <img src={img} alt="" loading="lazy" onError={isPhoto ? onImgError : undefined} />}
+        {isPhoto && (
+          <button
+            type="button"
+            className="bb-reroll"
+            title="Re-roll this face (~1 min on the GPU)"
+            aria-label={`Re-roll ${a.name}'s face`}
+            disabled={rolling}
+            onClick={onReroll}
+          >
+            {rolling ? '…' : '🎲'}
+          </button>
+        )}
+      </div>
+      <div className="bb-flip-name">
+        <b>{a.name}</b>
+        <span>{state === 1 ? 'anime' : a.kind}</span>
+      </div>
+    </div>
+  )
+}
+
+// Two backface-hidden faces + a rotating inner give a smooth flip through any number of
+// states: before each turn we stage the next content on the face that's about to appear.
+function FlipCard({ a, onUse }: { a: Archetype; onUse: (a: Archetype) => void }) {
+  const [turn, setTurn] = useState(0)
+  const [aState, setAState] = useState(0)
+  const [bState, setBState] = useState(1)
+  const [override, setOverride] = useState<string | undefined>(() => getFaceOverride(a.id))
+  const [rolling, setRolling] = useState(false)
+
+  const advance = () => {
+    const next = turn + 1
+    const ns = next % STATES
+    if (next % 2 === 0) setAState(ns)
+    else setBState(ns)
+    setTurn(next)
+  }
+
+  const reroll = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (rolling) return
+    setRolling(true)
+    try {
+      const r = await window.terrarium.portraits.regenerateArchetype(a.id, a.seed.look, ARCHETYPE_OUTFITS[a.id] ?? '')
+      if (r.ok && r.url) {
+        setOverride(r.url)
+        setFaceOverride(a.id, r.url)
+      }
+    } catch {
+      /* leave the existing face in place */
+    } finally {
+      setRolling(false)
+    }
+  }
+
+  // The override file vanished (e.g. portraits dir cleared) — drop back to the bundled face.
+  const onImgError = () => {
+    if (!override) return
+    clearFaceOverride(a.id)
+    setOverride(undefined)
+  }
+
+  const state = turn % STATES
+  const guard = (t: EventTarget) => (t as HTMLElement).closest('.bb-use-start, .bb-reroll')
+  return (
+    <div
+      className="bb-flip bb-flip3"
+      style={{ '--c': a.accent } as CSSProperties}
+      role="button"
+      tabIndex={0}
+      aria-label={`${a.name}, ${a.kind} — tap to flip through photo, anime, details`}
+      onClick={(e) => {
+        if (!guard(e.target)) advance()
+      }}
+      onKeyDown={(e) => {
+        if (guard(e.target)) return
+        if (e.key === ' ' || e.key === 'Enter') {
+          e.preventDefault()
+          advance()
+        }
+      }}
+    >
+      <span className="bb-flip-hint">↻</span>
+      <div className="bb-flip-inner" style={{ transform: `rotateY(${turn * 180}deg)` }}>
+        <div className="bb-face bb-face-a">
+          <FaceContent a={a} state={aState} onUse={onUse} override={override} rolling={rolling} onReroll={reroll} onImgError={onImgError} />
+        </div>
+        <div className="bb-face bb-face-b">
+          <FaceContent a={a} state={bState} onUse={onUse} override={override} rolling={rolling} onReroll={reroll} onImgError={onImgError} />
+        </div>
+      </div>
+      <div className="bb-flip-dots" aria-hidden="true">
+        {[0, 1, 2].map((s) => (
+          <i key={s} className={s === state ? 'on' : ''} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function ArchetypeGallery({ onUse }: { onUse: (a: Archetype) => void }) {
-  const [flipped, setFlipped] = useState<Set<string>>(new Set())
-  const toggle = (id: string) =>
-    setFlipped((prev) => {
-      const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
-      return next
-    })
-
   return (
     <div className="bb-arch-grid">
       {ARCHETYPES.map((a) => (
-        <div
-          key={a.id}
-          className={`bb-flip ${flipped.has(a.id) ? 'flipped' : ''}`}
-          style={{ '--c': a.accent } as CSSProperties}
-          role="button"
-          tabIndex={0}
-          aria-label={`${a.name}, ${a.kind} — flip for details`}
-          onClick={(e) => {
-            if (!(e.target as HTMLElement).closest('.bb-use-start')) toggle(a.id)
-          }}
-          onKeyDown={(e) => {
-            if (e.key === ' ' || e.key === 'Enter') {
-              e.preventDefault()
-              toggle(a.id)
-            }
-          }}
-        >
-          <div className="bb-flip-inner">
-            <div className="bb-face bb-front">
-              <span className="bb-flip-hint">↻</span>
-              <div className={`bb-flip-portrait ${archetypeFace(a.id) ? 'has-face' : ''}`} data-mono={a.mono}>
-                {archetypeFace(a.id) && <img src={archetypeFace(a.id)} alt="" loading="lazy" />}
-              </div>
-              <div className="bb-flip-name">
-                <b>{a.name}</b>
-                <span>{a.kind}</span>
-              </div>
-            </div>
-            <div className="bb-face bb-back">
-              <p>{a.bio}</p>
-              <div className="bb-back-tags">
-                {a.tags.map((t) => (
-                  <i key={t}>{t}</i>
-                ))}
-              </div>
-              <button className="bb-use-start" type="button" onClick={() => onUse(a)}>
-                Use this start →
-              </button>
-            </div>
-          </div>
-        </div>
+        <FlipCard key={a.id} a={a} onUse={onUse} />
       ))}
     </div>
   )

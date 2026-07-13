@@ -85,6 +85,37 @@
   --f-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
 }
 
+/* The one LIGHT theme — warm parchment "studio", the creation surface promoted app-wide.
+   Status hues are darkened/saturated to read on the pale ground; per the locked rule they
+   are never the sole signal (icon + text carry state too), and they keep lightness
+   separation for deuteranomaly (ok green ≠ warn amber ≠ crit red). Mirrors the parchment
+   tokens scoped to .bb so the Bot Builder and the app-wide theme share one palette. */
+:root[data-theme='studio'] {
+  --bg: #ece4d5;
+  --bg-2: #e4dac7;
+  --surface: #f7f1e6;
+  --surface-2: #eae0ce;
+  --edge: rgba(58, 44, 22, 0.12);
+  --edge-strong: rgba(58, 44, 22, 0.22);
+  --ink: #23201a;
+  --ink-soft: #6b5e46;
+  --ink-faint: #998a6e;
+  --accent: #26493c;
+  --accent-2: #c0692b;
+  --accent-ink: #f4f1e7;
+  --ok: #2e6a4c;
+  --warn: #a96a22;
+  --crit: #bc4127;
+  --info: #3e6e86;
+  --glow: rgba(38, 73, 60, 0.14);
+  --radius: 13px;
+  --radius-sm: 8px;
+  --led-radius: 50%;
+  --f-display: 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Georgia, serif;
+  --f-ui: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --f-mono: 'Cascadia Code', 'Consolas', ui-monospace, monospace;
+}
+
 * {
   box-sizing: border-box;
 }
