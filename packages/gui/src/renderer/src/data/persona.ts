@@ -165,3 +165,17 @@ export const ARCHETYPES: Archetype[] = [
     seed: { concept: 'poised corporate exec who finally exhales when the blazer comes off', vibe: 'commanding, composed, secretly soft with you', loves: 'good scotch, city views, tailored suits, quiet wins', relationship: 'your after-work unwind', look: 'black woman, rich dark brown skin, high sculpted cheekbones, sleek bob, tailored blazer, poised and elegant', backstory: 'Built the company from nothing; trusts almost no one — except you.' },
   },
 ]
+
+// Outfit per archetype for on-demand face re-rolls, so a regenerated face stays clothed
+// + on-brand. Mirrors the offline scripts/gen-archetype-faces.ts outfit list.
+export const ARCHETYPE_OUTFITS: Record<string, string> = {
+  goth: 'a black turtleneck',
+  fitness: 'an athletic tank top',
+  cottage: 'a floral linen dress',
+  cyber: 'a zipped techwear jacket',
+  academic: 'a knit cardigan over a blouse',
+  lounge: 'an elegant high-neck long-sleeve satin gown',
+  nextdoor: 'a cozy oversized hoodie',
+  gamer: 'an oversized graphic tee',
+  boss: 'a white collared blouse buttoned to the neck under a tailored blazer',
+}

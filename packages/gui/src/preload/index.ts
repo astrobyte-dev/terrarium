@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 import type {
   ActionRequest,
   ActionResult,
+  ArchetypeRegenResult,
   BotCreateResult,
   BotPreview,
   BotSpecInput,
@@ -108,6 +109,8 @@ const api = {
   portraits: {
     generate: (input: PortraitGenInput): Promise<PortraitGenResult> => ipcRenderer.invoke('portraits:generate', input),
     saveRef: (slug: string, url: string): Promise<PortraitSaveResult> => ipcRenderer.invoke('portraits:saveRef', slug, url),
+    regenerateArchetype: (id: string, look: string, outfit: string): Promise<ArchetypeRegenResult> =>
+      ipcRenderer.invoke('portraits:regenerateArchetype', id, look, outfit),
   },
 }
 

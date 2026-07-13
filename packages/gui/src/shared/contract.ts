@@ -134,6 +134,13 @@ export interface PortraitSaveResult {
   ok: boolean
   message: string
 }
+// On-demand re-roll of a starter archetype's photoreal face. The URL carries a
+// cache-busting query so the <img> reloads the overwritten file.
+export interface ArchetypeRegenResult {
+  ok: boolean
+  url?: string // terrarium://portraits/archetype_<id>.png?t=…
+  error?: string
+}
 
 // ---- character roster (manage who's in AGENTS.md / the 12k budget) ----
 export interface RosterCardView {
