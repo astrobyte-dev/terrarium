@@ -40,6 +40,7 @@ const toChatMsg = (m: Manifest): ChatMsg => ({
   ts: m.ts,
   images: m.images.map((name) => `terrarium://inbox/${name}`),
   ...(m.command ? { command: m.command } : {}),
+  ...((m.params as { anime?: boolean } | undefined)?.anime ? { anime: true } : {}),
 })
 
 function readHistory(): ChatMsg[] {
