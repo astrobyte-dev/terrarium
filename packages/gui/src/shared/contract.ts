@@ -252,11 +252,35 @@ export interface ChatMsg {
    * (not reproducible) and text messages.
    */
   command?: string
+  /**
+   * Whether this photo was rendered by the anime checkpoint (from the pic manifest's
+   * params.anime). Drives the chat's per-image Anime↔Real toggle button.
+   */
+  anime?: boolean
 }
 
 export interface ChatStatus {
   state: 'connecting' | 'ready' | 'sending' | 'closed' | 'error'
   detail: string
+}
+
+/**
+ * Live generation toggles from the chat controls panel. Written to
+ * %LOCALAPPDATA%\Terrarium\gen_settings.json and read by the pic daemon on every /pic.
+ */
+export interface GenSettings {
+  /** Route generation through the character's IPAdapter face reference (identity lock). */
+  faceLock: boolean
+  /** Inject foot-emphasis tags (feet, foot focus, soles, toes) into every /pic. */
+  feetFocus: boolean
+  /** Treat every /pic as explicit (auto-adds the rating/uncensored tags). */
+  explicitDefault: boolean
+  /** Auto-upscale every delivered pic (sharper, ~+20s each). */
+  hdAuto: boolean
+  /** Run the high-res face + hand detailer passes (off = faster, softer). */
+  detailers: boolean
+  /** Phrases baked into every /pic prompt on top of what you type (the "always include" list). */
+  alwaysInclude: string[]
 }
 
 // "She texts you first" settings (idle-aware proactive messages, in-app only). Mirrors

@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ChatMsg, ChatStatus } from '../data/types'
+import type { ChatMsg, ChatStatus, GenSettings } from '../data/types'
 import { deriveSlug } from '../data/slug'
 import { CommandMenu } from './CommandMenu'
 import { Lightbox } from './Lightbox'
 import { MessageReactions } from './MessageReactions'
 import { ProactiveMenu } from './ProactiveMenu'
 import { MemoryModal } from './MemoryModal'
+import { PicExtrasModal } from './PicExtrasModal'
 import { TeasedImage } from './TeasedImage'
 
 // A stable-enough key for a message to hang a reaction / deletion on (no server IDs).
@@ -232,6 +233,12 @@ export function ChatScreen({
     inputRef.current?.focus()
   }
   const sendCmd = (text: string) => send(text)
+  // Re-fire a shot in the other render mode. The pic pipeline switches to the anime
+  // checkpoint on "anime"/"noob" and forces photoreal on "real"/"photo", so we swap tokens.
+  const toAnime = (cmd: string) =>
+    cmd.replace(/\b(real|photo|photoreal|realistic|irl)\b/gi, '').replace(/\s{2,}/g, ' ').trim() + ' anime'
+  const toPhotoreal = (cmd: string) =>
+    cmd.replace(/\b(anime|noob|noobai)\b/gi, '').replace(/\s{2,}/g, ' ').trim() + ' real'
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -246,6 +253,26 @@ export function ChatScreen({
 
   // Index of the most recent photo message — /hd upscales the LATEST photo, so the HD
   // button only makes sense there. Redo/×3 re-fire a specific shot's own command.
+  // Live generation toggles (face lock, feet focus). Persisted by the main process to
+  // %LOCALAPPDATA%\Terrarium\gen_settings.json, which the pic daemon reads on the next /pic.
+  const [gen, setGen] = useState<GenSettings>({
+    faceLock: true,
+    feetFocus: false,
+    explicitDefault: false,
+    hdAuto: false,
+    detailers: true,
+    alwaysInclude: [],
+  })
+  const [picExtrasOpen, setPicExtrasOpen] = useState(false)
+  useEffect(() => {
+    window.terrarium.gen.get().then(setGen).catch(() => {})
+  }, [])
+  const toggleGen = (key: keyof GenSettings) => {
+    const next = { ...gen, [key]: !gen[key] }
+    setGen(next)
+    void window.terrarium.gen.set({ [key]: next[key] }).catch(() => {})
+  }
+
   let lastImageIdx = -1
   visible.forEach((m, i) => {
     if (m.images && m.images.length > 0) lastImageIdx = i
@@ -253,6 +280,7 @@ export function ChatScreen({
 
   return (
     <div className="chat-shell">
+      {/* controls panel is rendered at the end so it sits to the right of .chat */}
       <aside className="chat-roster">
         <span className="chat-roster-head">Characters</span>
         <div className="chat-roster-list">
@@ -383,12 +411,29 @@ export function ChatScreen({
                             <button type="button" onClick={() => sendCmd(m.command!.replace(/\s+x[2-4]\b/gi, '') + ' x3')}>
                               ×3
                             </button>
+                            {m.anime ? (
+                              <button type="button" title="Re-render this shot as a photo"
+                                onClick={() => sendCmd(toPhotoreal(m.command!))}>
+                                📷 Real
+                              </button>
+                            ) : (
+                              <button type="button" title="Re-render this shot in anime style"
+                                onClick={() => sendCmd(toAnime(m.command!))}>
+                                🎨 Anime
+                              </button>
+                            )}
                           </>
                         )}
                         {i === lastImageIdx && (
-                          <button type="button" onClick={() => sendCmd('/hd')}>
-                            HD
-                          </button>
+                          <>
+                            <button type="button" onClick={() => sendCmd('/hd')}>
+                              HD
+                            </button>
+                            <button type="button" title="Animate this photo into a short clip (sent to Telegram)"
+                              onClick={() => sendCmd('/vid')}>
+                              🎬 Video
+                            </button>
+                          </>
                         )}
                       </div>
                     )}
@@ -512,6 +557,7 @@ export function ChatScreen({
       </form>
 
       {memoryOpen && <MemoryModal onClose={() => setMemoryOpen(false)} />}
+      {picExtrasOpen && <PicExtrasModal onClose={() => setPicExtrasOpen(false)} />}
       {pickerKey && <div className="react-backdrop" onClick={() => setPickerKey(null)} />}
       <Lightbox
         src={zoomSrc}
@@ -524,6 +570,39 @@ export function ChatScreen({
         onNext={stripActive && zoomIdx! < allImages.length - 1 ? () => setZoomIdx(zoomIdx! + 1) : undefined}
       />
       </div>
+      <aside className="chat-controls">
+        <span className="chat-controls-head">Controls</span>
+        {(
+          [
+            { key: 'faceLock', label: 'Face lock', hint: 'lock her face to the reference' },
+            { key: 'feetFocus', label: 'Feet focus', hint: 'emphasise feet in every pic' },
+            { key: 'explicitDefault', label: 'Explicit', hint: 'full NSFW on every pic' },
+            { key: 'hdAuto', label: 'HD auto', hint: 'upscale every pic (~+20s)' },
+            { key: 'detailers', label: 'Fix hands & faces', hint: 'high-res detail passes' },
+          ] as const
+        ).map((t) => (
+          <div className="ctl-toggle" key={t.key}>
+            <span className="ctl-label">
+              {t.label}
+              <span className="ctl-hint">{t.hint}</span>
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={gen[t.key]}
+              aria-label={t.label}
+              className={`ctl-switch ${gen[t.key] ? 'on' : ''}`}
+              onClick={() => toggleGen(t.key)}
+            >
+              <span className="ctl-knob" />
+            </button>
+          </div>
+        ))}
+        <button type="button" className="ctl-btn" onClick={() => setPicExtrasOpen(true)}>
+          ✎ Always include…
+        </button>
+        <span className="chat-controls-foot">applies to your next /pic</span>
+      </aside>
     </div>
   )
 }

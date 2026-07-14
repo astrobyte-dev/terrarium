@@ -22,6 +22,7 @@ import type {
   DraftResult,
   DraftSeedInput,
   GalleryEntry,
+  GenSettings,
   LogLine,
   MemoryView,
   VoiceCatalogView,
@@ -58,6 +59,10 @@ declare global {
       proactive: {
         get: () => Promise<ProactiveSettings>
         set: (patch: Partial<ProactiveSettings>) => Promise<ProactiveSettings>
+      }
+      gen: {
+        get: () => Promise<GenSettings>
+        set: (patch: Partial<GenSettings>) => Promise<GenSettings>
       }
       memory: {
         list: () => Promise<MemoryView>

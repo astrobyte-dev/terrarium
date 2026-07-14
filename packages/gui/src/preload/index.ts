@@ -31,6 +31,7 @@ import type {
   PortraitGenResult,
   PortraitSaveResult,
   ProactiveSettings,
+  GenSettings,
   RosterView,
   ServiceView,
 } from '../shared/contract'
@@ -65,6 +66,10 @@ const api = {
   proactive: {
     get: (): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:get'),
     set: (patch: Partial<ProactiveSettings>): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:set', patch),
+  },
+  gen: {
+    get: (): Promise<GenSettings> => ipcRenderer.invoke('gen:get'),
+    set: (patch: Partial<GenSettings>): Promise<GenSettings> => ipcRenderer.invoke('gen:set', patch),
   },
   memory: {
     list: (): Promise<MemoryView> => ipcRenderer.invoke('memory:list'),

@@ -11,6 +11,7 @@ import { setupMemory } from './memory'
 import { resolveVoiceAudio, setupVoice } from './voice'
 import { setupDoctor } from './doctor'
 import { resolveInboxImage, setupInbox } from './inbox'
+import { setupGenSettings } from './gensettings'
 import { resolvePortraitImage, resolveRefImage, setupPortraits } from './portraits'
 
 // A packaged tray app has no console — boot milestones and crashes go to
@@ -153,6 +154,7 @@ app.whenReady().then(() => {
   setupCharacters() // manage the roster (view sizes, remove to reclaim AGENTS.md budget)
   setupMemory() // curated long-term memory (workspace/MEMORY.md) + auto-facts view
   setupVoice() // Kokoro voice notes (CPU/ONNX) + per-character preset voices
+  setupGenSettings() // live pic toggles (face lock, feet focus) → gen_settings.json for the daemon
   setupDoctor() // read-only health check
   bootlog('setup complete')
 
