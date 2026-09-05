@@ -1,4 +1,5 @@
-import { app, ipcMain, type BrowserWindow } from 'electron'
+import { trustedIpc as ipcMain } from './ipc'
+import { app, type BrowserWindow } from 'electron'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import {

@@ -9,9 +9,13 @@ import type {
   BrainLiveness,
   BrainsList,
   CharGetResult,
+  CharActivateResult,
+  CharDeleteResult,
   CharRemoveResult,
   CharUpdateResult,
   ChatConnectResult,
+  ChatSendRequest,
+  ChatSendResult,
   ChatMsg,
   ChatStatus,
   CoreState,
@@ -31,6 +35,7 @@ import type {
   PortraitGenResult,
   PortraitSaveResult,
   ProactiveSettings,
+  GenSettings,
   RosterView,
   ServiceView,
 } from '../shared/contract'
@@ -58,17 +63,23 @@ const api = {
   },
   chat: {
     connect: (): Promise<ChatConnectResult> => ipcRenderer.invoke('chat:connect'),
-    send: (text: string): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('chat:send', text),
+    send: (req: ChatSendRequest): Promise<ChatSendResult> => ipcRenderer.invoke('chat:send', req),
     onMessage: (cb: (m: ChatMsg) => void) => on<ChatMsg>('chat:message', cb),
+    onHistory: (cb: (m: ChatMsg[]) => void) => on<ChatMsg[]>('chat:history', cb),
     onStatus: (cb: (s: ChatStatus) => void) => on<ChatStatus>('chat:status', cb),
   },
   proactive: {
     get: (): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:get'),
     set: (patch: Partial<ProactiveSettings>): Promise<ProactiveSettings> => ipcRenderer.invoke('proactive:set', patch),
   },
+  gen: {
+    get: (): Promise<GenSettings> => ipcRenderer.invoke('gen:get'),
+    set: (patch: Partial<GenSettings>): Promise<GenSettings> => ipcRenderer.invoke('gen:set', patch),
+  },
   memory: {
     list: (): Promise<MemoryView> => ipcRenderer.invoke('memory:list'),
     save: (memories: string[]): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('memory:save', memories),
+    saveCharacter: (character: string, memories: string[]): Promise<{ ok: boolean; message?: string }> => ipcRenderer.invoke('memory:saveCharacter', character, memories),
   },
   voice: {
     catalog: (): Promise<VoiceCatalogView> => ipcRenderer.invoke('voice:catalog'),
@@ -102,6 +113,8 @@ const api = {
   characters: {
     list: (): Promise<RosterView> => ipcRenderer.invoke('characters:list'),
     remove: (heading: string): Promise<CharRemoveResult> => ipcRenderer.invoke('characters:remove', heading),
+    activate: (slug: string): Promise<CharActivateResult> => ipcRenderer.invoke('characters:activate', slug),
+    deletePermanently: (slug: string): Promise<CharDeleteResult> => ipcRenderer.invoke('characters:deletePermanently', slug),
     get: (slug: string): Promise<CharGetResult> => ipcRenderer.invoke('characters:get', slug),
     update: (spec: BotSpecInput, originalSlug: string, originalHeading: string): Promise<CharUpdateResult> =>
       ipcRenderer.invoke('characters:update', spec, originalSlug, originalHeading),

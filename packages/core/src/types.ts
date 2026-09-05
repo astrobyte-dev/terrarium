@@ -1,6 +1,6 @@
-export type ServiceId = 'gateway' | 'ollama' | 'comfyui' | 'picDaemon'
+export type ServiceId = 'gateway' | 'ollama' | 'comfyui' | 'picDaemon' | 'inference'
 
-export const SERVICE_IDS: readonly ServiceId[] = ['gateway', 'ollama', 'comfyui', 'picDaemon']
+export const SERVICE_IDS: readonly ServiceId[] = ['gateway', 'ollama', 'comfyui', 'picDaemon', 'inference']
 
 /**
  * Health is a ladder, not a boolean. `quiet`/`wedged` exist because the

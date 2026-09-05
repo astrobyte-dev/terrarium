@@ -1,8 +1,9 @@
+import { trustedIpc as ipcMain } from './ipc'
 import { readFileSync } from 'node:fs'
 import { execFile } from 'node:child_process'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { BrowserWindow, ipcMain, dialog } from 'electron'
+import { BrowserWindow, dialog } from 'electron'
 import { createSupervisor, type Supervisor, type ServiceStatus, type ServiceId, type LogEvent } from '@terrarium/core'
 import type { ActionRequest, ActionResult, MetaView, ServiceState, ServiceView } from '../shared/contract'
 
@@ -24,6 +25,7 @@ const PORTS: Record<ServiceId, string> = {
   ollama: ':11434',
   comfyui: ':8188',
   picDaemon: 'tail',
+  inference: ':18790',
 }
 
 // HealthRung -> (ladder rung reached, coarse state). wedged = responding but

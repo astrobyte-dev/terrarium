@@ -43,7 +43,9 @@ export async function renderImage(
       body: JSON.stringify({ prompt: workflow }),
     })
     if (!res.ok) {
-      return { ok: false, promptId: null, images: [], message: `POST /prompt failed: HTTP ${res.status}` }
+      let detail = ''
+      try { const body = await res.json() as { error?: { message?: unknown } }; if (typeof body.error?.message === 'string') detail = `: ${body.error.message.slice(0, 300)}` } catch { /* no structured error */ }
+      return { ok: false, promptId: null, images: [], message: `POST /prompt failed: HTTP ${res.status}${detail}` }
     }
     const body = (await res.json()) as { prompt_id?: string; error?: unknown; node_errors?: unknown }
     if (typeof body.prompt_id !== 'string') {
@@ -65,7 +67,12 @@ export async function renderImage(
     } catch {
       continue
     }
-    const entry = history[promptId] as { outputs?: Record<string, { images?: RenderedImage[] }> } | undefined
+    const entry = history[promptId] as { status?: { status_str?: string; completed?: boolean; messages?: [string, unknown][] }; outputs?: Record<string, { images?: RenderedImage[] }> } | undefined
+    if (entry?.status?.status_str === 'error') {
+      const interrupted = entry.status.messages?.some(([name]) => name === 'execution_interrupted')
+      return { ok: false, promptId, images: [], message: interrupted ? 'Image generation was interrupted' : 'Image generation failed; check the ComfyUI log' }
+    }
+    if (entry?.status?.completed === false) continue
     if (entry?.outputs === undefined) continue
     const images = Object.values(entry.outputs).flatMap((o) => o.images ?? [])
     if (images.length > 0) {

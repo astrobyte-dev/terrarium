@@ -14,6 +14,7 @@ export const SECRET_NAMES = {
   ollamaApiKey: 'ollama-api-key',
   gatewayAuthToken: 'gateway-auth-token',
   anthropicApiKey: 'anthropic-api-key', // optional — captured only when the user opens the Claude door
+  veniceApiKey: 'venice-api-key',
 } as const
 
 // Values travel via env vars (never command lines); DPAPI binds the blobs to

@@ -16,14 +16,16 @@ export interface BrainChoice {
 export interface BrainGateOptions {
   /** true once the anthropic API key is in the secret store. */
   anthropicConfigured?: boolean
+  veniceConfigured?: boolean
 }
 
 export function resolveBrainChoice(entry: CatalogEntry, opts: BrainGateOptions = {}): BrainChoice {
   const no = (reason: string): BrainChoice => ({ ok: false, primaryModel: null, fallbacks: [], reason })
 
-  if (entry.reasoning) return no('reasoning model — breaks OpenClaw (thinking spam / empty replies)')
+  if (entry.reasoning && !entry.nonThinkingVerified) return no('reasoning model — non-thinking compatibility has not been verified')
   if (entry.configRef === null) return no('guidance-only size placeholder, not an installable model')
-  const configured = entry.provider === 'anthropic' ? opts.anthropicConfigured === true : ALWAYS_CONFIGURED.has(entry.provider)
+  const configured = entry.provider === 'anthropic' ? opts.anthropicConfigured === true
+    : entry.provider === 'venice' ? opts.veniceConfigured === true : ALWAYS_CONFIGURED.has(entry.provider)
   if (!configured) {
     return no(`${entry.provider} is not configured yet — add its API key first`)
   }

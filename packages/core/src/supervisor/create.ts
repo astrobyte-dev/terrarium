@@ -111,7 +111,8 @@ export function createSupervisor(system: SystemPort = createWindowsSystem()): Su
       const entry = MODEL_CATALOG.find((m) => m.id === catalogId)
       if (entry === undefined) return { ok: false, message: `unknown brain: ${catalogId}` }
       const anthropicConfigured = (await store.get(SECRET_NAMES.anthropicApiKey)) !== null
-      const choice = resolveBrainChoice(entry, { anthropicConfigured })
+      const veniceConfigured = (await store.get(SECRET_NAMES.veniceApiKey)) !== null
+      const choice = resolveBrainChoice(entry, { anthropicConfigured, veniceConfigured })
       if (!choice.ok || choice.primaryModel === null) return { ok: false, message: choice.reason }
 
       await writeBrainSelection(system, { primaryModel: choice.primaryModel, fallbacks: choice.fallbacks })

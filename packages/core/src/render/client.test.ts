@@ -7,6 +7,12 @@ const json = (body: unknown, ok = true) =>
   new Response(JSON.stringify(body), { status: ok ? 200 : 500, headers: { 'content-type': 'application/json' } })
 
 describe('renderImage', () => {
+  it('reports interrupted jobs as failures rather than successful empty images', async () => {
+    const fetchImpl = vi.fn().mockResolvedValueOnce(json({ prompt_id: 'p1' })).mockResolvedValueOnce(json({
+      p1: { status: { status_str: 'error', completed: false, messages: [['execution_interrupted', {}]] }, outputs: {} } }))
+    const result = await renderImage('http://x', WF, { fetchImpl: fetchImpl as never, pollIntervalMs: 1 })
+    expect(result.ok).toBe(false); expect(result.message).toMatch(/interrupted/)
+  })
   it('submits, polls history, and returns the output images', async () => {
     const fetchImpl = vi
       .fn()

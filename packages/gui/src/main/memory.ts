@@ -1,8 +1,8 @@
-import { ipcMain } from 'electron'
+import { trustedIpc as ipcMain } from './ipc'
 import { homedir } from 'node:os'
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
-import { parseBullets, renderMemoryDoc } from '@terrarium/core'
+import { activeCharacter, parseBullets, renderMemoryDoc } from '@terrarium/core'
 import type { MemoryView } from '../shared/contract'
 
 // The Memory panel = "what she remembers about you". It edits the brain's curated
@@ -28,7 +28,8 @@ export function setupMemory(): void {
     // Only show learned facts she hasn't already been pinned (avoid dupes in the UI).
     const pinned = new Set(memories.map((m) => m.trim().toLowerCase()))
     const facts = readBullets(FACTS_FILE).filter((f) => !pinned.has(f.trim().toLowerCase()))
-    return { memories, facts }
+    const character = activeCharacter(WORKSPACE)
+    return { memories, facts, character, characterMemories: readBullets(join(WORKSPACE, 'memory', 'characters', `${character}.md`)) }
   })
 
   ipcMain.handle('memory:save', (_e, memories: string[]): { ok: boolean; message?: string } => {
@@ -39,5 +40,13 @@ export function setupMemory(): void {
     } catch (e) {
       return { ok: false, message: e instanceof Error ? e.message : String(e) }
     }
+  })
+  ipcMain.handle('memory:saveCharacter', (_e, character: string, memories: string[]) => {
+    try {
+      const path = join(WORKSPACE, 'memory', 'characters', `${character}.md`)
+      mkdirSync(dirname(path), { recursive: true })
+      writeFileSync(path, renderMemoryDoc(memories))
+      return { ok: true }
+    } catch (e) { return { ok: false, message: e instanceof Error ? e.message : String(e) } }
   })
 }

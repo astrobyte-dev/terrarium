@@ -1,4 +1,6 @@
 export * from './types'
+export { localEndpoint, performanceSettings, performanceDir, INFERENCE_URL } from './inference/settings'
+export { activeCharacter } from './inference/context'
 export type { DirEntry, SpawnHandle, SpawnSpec, SystemPort } from './system/system-port'
 export { createWindowsSystem } from './system/windows'
 export { createSupervisor, type Supervisor } from './supervisor/create'

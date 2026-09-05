@@ -4,8 +4,8 @@ appId: com.terrarium.app
 productName: Terrarium
 # electron is hoisted to the workspace root, so electron-builder can't read a
 # fixed version from packages/gui/node_modules — pin it explicitly (matches
-# the installed 33.x; bump together with the electron devDependency).
-electronVersion: 33.4.11
+# the installed version; bump together with the electron devDependency).
+electronVersion: 44.2.0
 directories:
   buildResources: build
   # Build OUTSIDE the OneDrive-synced source tree: OneDrive locks files inside

@@ -11,7 +11,7 @@ import { SpecimenCard } from './SpecimenCard'
 import { ArchetypeGallery } from './ArchetypeGallery'
 import { SpiceDial, spiceToMode } from './SpiceDial'
 import { KinkProfile } from './KinkProfile'
-import { ARCHETYPES, type Archetype, completeness, findContradictions, signatureAccent } from '../data/persona'
+import { ARCHETYPES, ARCHETYPE_OUTFITS, type Archetype, completeness, findContradictions, signatureAccent } from '../data/persona'
 import { archetypeFace } from '../data/archetypeFaces'
 
 interface Form {
@@ -286,6 +286,12 @@ export function BotBuilderScreen({
       relationship: take(prev.relationship, a.seed.relationship),
       look: take(prev.look, a.seed.look),
       backstory: take(prev.backstory, a.seed.backstory),
+      speechStyle: take(prev.speechStyle, a.seed.speechStyle.join('\n')),
+      openerIdeas: take(prev.openerIdeas, a.seed.openerIdeas.join('\n')),
+      // Fill the photo pipeline too, so she's ready to render without hand-typing prompts:
+      // her look doubles as the photo identity, and her card outfit becomes the shot outfit.
+      photoIdentity: take(prev.photoIdentity, a.seed.look),
+      photoOutfit: take(prev.photoOutfit, (ARCHETYPE_OUTFITS[a.id] ?? '').replace(/^an? /i, '')),
       photoShot: a.seed.photoShot ? take(prev.photoShot, a.seed.photoShot) : prev.photoShot,
     }))
     setPreview(null)

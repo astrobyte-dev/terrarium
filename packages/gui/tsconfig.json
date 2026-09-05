@@ -13,5 +13,5 @@
     "baseUrl": ".",
     "paths": { "@/*": ["src/renderer/src/*"] }
   },
-  "include": ["src", "electron.vite.config.ts"]
+  "include": ["src", "electron.vite.config.ts", "scripts/desktop-smoke.ts", "../../scripts/live-services.ts"]
 }

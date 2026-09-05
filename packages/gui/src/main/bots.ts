@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { trustedIpc as ipcMain } from './ipc'
 import {
   createBot,
   createOllamaChat,
@@ -28,7 +28,7 @@ export function setupBots(): void {
 
   ipcMain.handle('bots:preview', async (_e, input: BotSpecInput): Promise<BotPreview> => {
     const spec = toSpec(input)
-    const r = await createBot({ system, spec, dryRun: true })
+    const r = await createBot({ system, spec, dryRun: true, libraryOnly: true })
     let compactCard = ''
     try {
       compactCard = renderCompactCard(spec)
@@ -49,7 +49,7 @@ export function setupBots(): void {
   })
 
   ipcMain.handle('bots:create', async (_e, input: BotSpecInput): Promise<BotCreateResult> => {
-    const r = await createBot({ system, spec: toSpec(input), dryRun: false })
+    const r = await createBot({ system, spec: toSpec(input), dryRun: false, libraryOnly: true })
     return { ok: r.ok, errors: r.errors, wrote: r.wrote, backupPath: r.backupPath, fullCardPath: r.fullCardPath }
   })
 

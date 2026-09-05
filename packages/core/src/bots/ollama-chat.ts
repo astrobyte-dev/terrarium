@@ -3,6 +3,8 @@
 // parallel slot, and the drafting model is uncensored so adult companion personas
 // aren't refused. fetch is injectable for tests.
 
+import { helperContext, localEndpoint } from '../inference/settings'
+
 export interface OllamaChatOptions {
   baseUrl?: string
   model?: string
@@ -11,6 +13,8 @@ export interface OllamaChatOptions {
   temperature?: number
   /** Ollama constrains generation to valid JSON when set — far more reliable than repair. */
   format?: 'json'
+  maxTokens?: number
+  keepAlive?: string | number
 }
 
 // The daemon's uncensored drafting model — present on this machine, won't deflect
@@ -19,11 +23,12 @@ export const DEFAULT_DRAFT_MODEL = 'mannix/llama3.1-8b-abliterated:latest'
 const DEFAULT_URL = 'http://127.0.0.1:11434'
 
 export function createOllamaChat(options: OllamaChatOptions = {}): (prompt: string) => Promise<string> {
-  const baseUrl = options.baseUrl ?? DEFAULT_URL
+  const baseUrl = options.baseUrl ?? localEndpoint('ollama')
   const model = options.model ?? DEFAULT_DRAFT_MODEL
   const fetchImpl = options.fetchImpl ?? fetch
   const timeoutMs = options.timeoutMs ?? 120_000
   const temperature = options.temperature ?? 0.9
+  const maxTokens = options.maxTokens ?? 768
 
   return async (prompt: string): Promise<string> => {
     const controller = new AbortController()
@@ -36,7 +41,9 @@ export function createOllamaChat(options: OllamaChatOptions = {}): (prompt: stri
           model,
           stream: false,
           messages: [{ role: 'user', content: prompt }],
-          options: { temperature },
+          options: { temperature, num_ctx: helperContext(prompt, maxTokens), num_predict: maxTokens },
+          keep_alive: options.keepAlive ?? '20s',
+          ...(/qwen3/.test(model) ? { think: false } : {}),
           ...(options.format ? { format: options.format } : {}),
         }),
         signal: controller.signal,

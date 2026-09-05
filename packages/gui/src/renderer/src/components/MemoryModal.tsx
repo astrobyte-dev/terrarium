@@ -6,6 +6,9 @@ import { useEffect, useRef, useState } from 'react'
 export function MemoryModal({ onClose }: { onClose: () => void }) {
   const [memories, setMemories] = useState<string[]>([])
   const [facts, setFacts] = useState<string[]>([])
+  const [character, setCharacter] = useState('')
+  const [characterMemories, setCharacterMemories] = useState<string[]>([])
+  const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
   const [draft, setDraft] = useState('')
   const [editIdx, setEditIdx] = useState<number | null>(null)
@@ -19,15 +22,20 @@ export function MemoryModal({ onClose }: { onClose: () => void }) {
       .then((v) => {
         setMemories(v.memories)
         setFacts(v.facts)
+        setCharacter(v.character ?? '')
+        setCharacterMemories(v.characterMemories ?? [])
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
   }, [])
 
   // Persist the full list on any change; flash a subtle "saved".
-  const persist = (next: string[]) => {
-    setMemories(next)
-    window.terrarium?.memory?.save(next).catch(() => {})
+  const persist = async (next: string[]) => {
+    try {
+      const result = await window.terrarium.memory.save(next)
+      if (!result.ok) { setError(result.message ?? 'Could not save memory'); return }
+    } catch { setError('Could not save memory'); return }
+    setError(''); setMemories(next)
     setSavedFlash(true)
     if (savedTimer.current) clearTimeout(savedTimer.current)
     savedTimer.current = setTimeout(() => setSavedFlash(false), 1200)
@@ -75,6 +83,7 @@ export function MemoryModal({ onClose }: { onClose: () => void }) {
               Add
             </button>
           </div>
+          {error && <p role="alert">{error}</p>}
 
           {!loaded ? (
             <p className="mem-empty">Loading…</p>
@@ -118,6 +127,21 @@ export function MemoryModal({ onClose }: { onClose: () => void }) {
             </ul>
           )}
 
+          {characterMemories.length > 0 && <div className="mem-facts">
+            <span className="mem-facts-head">Remembered with {character}</span>
+            <ul className="mem-list">{characterMemories.map((note, i) => <li key={i} className="mem-item">
+              <span className="mem-text">{note}</span>
+              <button type="button" className="mem-x" aria-label="Forget character memory" onClick={async () => {
+                const next = characterMemories.filter((_, n) => n !== i)
+                try {
+                  const result = await window.terrarium.memory.saveCharacter(character, next)
+                  if (result.ok) { setCharacterMemories(next); setError('') }
+                  else setError(result.message ?? 'Could not save memory')
+                } catch { setError('Could not save memory') }
+              }}>Forget</button>
+            </li>)}</ul>
+            <p>Use /remember in chat to add a note for this character. Use the pinned list above for shared facts.</p>
+          </div>}
           {facts.length > 0 && (
             <div className="mem-facts">
               <span className="mem-facts-head">She’s also noticed</span>

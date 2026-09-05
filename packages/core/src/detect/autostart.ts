@@ -1,7 +1,7 @@
 import type { AutostartEntry } from '../types'
 
 export const OPENCLAW_TASKS_QUERY =
-  "Get-ScheduledTask | Where-Object { $_.TaskName -like '*OpenClaw*' } | Select-Object TaskName,State | ConvertTo-Json -Compress"
+  "Get-ScheduledTask | Where-Object { $_.TaskName -like '*OpenClaw*' -or $_.TaskName -eq 'Terrarium Inference' } | Select-Object TaskName,State | ConvertTo-Json -Compress"
 
 // Microsoft.PowerShell.Cmdletization.GeneratedTypes.ScheduledTask.StateEnum
 const TASK_STATES: Record<number, string> = {

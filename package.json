@@ -9,10 +9,12 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit -p packages/core && tsc --noEmit -p packages/tui",
+    "typecheck": "tsc --noEmit -p packages/core && tsc --noEmit -p packages/tui && tsc --noEmit -p packages/gui",
+    "check": "npm run typecheck && npm test && npm run gui:build",
     "tui": "tsx --tsconfig packages/tui/tsconfig.json packages/tui/src/index.tsx",
     "gui": "npm run dev -w @terrarium/gui",
     "gui:build": "npm run build -w @terrarium/gui",
+    "test:desktop": "npm run gui:build && node scripts/run-desktop-smoke.mjs",
     "gui:package": "npm run package -w @terrarium/gui",
     "smoke": "tsx packages/core/scripts/smoke.ts",
     "release": "tsx packages/core/scripts/release.ts",
@@ -20,6 +22,10 @@
     "setup": "tsx packages/core/scripts/setup.ts",
     "capture-secrets": "tsx packages/core/scripts/capture-secrets.ts",
     "set-anthropic-key": "tsx packages/core/scripts/set-anthropic-key.ts",
+    "set-venice-key": "tsx packages/core/scripts/set-venice-key.ts",
+    "performance:install": "tsx scripts/install-performance.ts",
+    "performance:benchmark": "tsx scripts/benchmark-performance.ts",
+    "performance:fetch-models": "tsx scripts/fetch-performance-candidates.ts",
     "install-status": "tsx packages/core/scripts/install-status.ts",
     "install-openclaw": "tsx packages/core/scripts/install-openclaw.ts",
     "install-comfyui": "tsx packages/core/scripts/install-comfyui.ts",
@@ -27,10 +33,13 @@
     "assemble-comfyui": "tsx packages/core/scripts/assemble-comfyui.ts",
     "pull-model": "tsx packages/core/scripts/pull-model.ts",
     "create-bot": "tsx packages/core/scripts/create-bot.ts",
-    "brain-options": "tsx packages/core/scripts/brain-options.ts"
+    "brain-options": "tsx packages/core/scripts/brain-options.ts",
+    "test:live": "tsx scripts/live-services.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "esbuild": "^0.25.12",
+    "jsdom": "^26.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.8.0",
     "vitest": "^3.2.0"
