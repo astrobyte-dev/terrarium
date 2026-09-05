@@ -42,7 +42,7 @@ export function BuilderRoster({
       <div className="bb-section">Your characters</div>
       {cards.length === 0 && <p className="bb-hint">No characters yet — create your first below.</p>}
       {cards.map((c: RosterCardView) => {
-        const slug = deriveSlug(c.name)
+        const slug = c.slug ?? deriveSlug(c.name)
         const isEditing = editingSlug === slug
         return (
           <div className={`bb-roster-row ${isEditing ? 'editing' : ''}`} key={c.heading}>

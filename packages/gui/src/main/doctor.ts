@@ -1,7 +1,7 @@
+import { trustedIpc as ipcMain } from './ipc'
 import { readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { ipcMain } from 'electron'
 import {
   buildDoctorReport,
   createDpapiSecretStore,

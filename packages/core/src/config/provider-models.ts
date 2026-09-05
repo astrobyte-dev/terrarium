@@ -30,6 +30,9 @@ export const ARLIAI_MODELS = [
 ]
 
 export const OLLAMA_MODELS = [
+  { id: 'huihui_ai/qwen3.5-abliterated:9b', name: 'Qwen 3.5 9B (non-thinking)', reasoning: false,
+    input: ['text'], cost: NO_COST, contextWindow: 16384, maxTokens: 1024,
+    params: { num_ctx: 16384, think: false }, compat: { supportsTools: false, supportsUsageInStreaming: true } },
   {
     id: 'huihui_ai/qwen3-abliterated:8b',
     name: 'qwen3-abliterated:8b',

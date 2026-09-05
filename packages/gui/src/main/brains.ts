@@ -1,8 +1,9 @@
+import { trustedIpc as ipcMain } from './ipc'
 import { copyFileSync, readFileSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { ipcMain } from 'electron'
 import type { BrainLiveness, BrainOpt, BrainsList } from '../shared/contract'
+import { createChatClient, createWindowsSystem, performanceDir, performanceSettings } from '@terrarium/core'
 
 const CFG = join(homedir(), '.openclaw', 'openclaw.json')
 
@@ -30,12 +31,15 @@ function listBrains(): BrainsList {
       })
     }
   }
-  return { current: cfg?.agents?.defaults?.model?.primary ?? '', models }
+  let accountedUsd = 0
+  try { accountedUsd = JSON.parse(readFileSync(join(performanceDir(), 'venice-usage.json'), 'utf8')).spentUsd ?? 0 } catch { /* no usage */ }
+  return { current: cfg?.agents?.defaults?.model?.primary ?? '', models,
+    ...(providers.venice ? { veniceBudget: { limitUsd: performanceSettings().veniceBudgetUsd, accountedUsd } } : {}) }
 }
 
 // SAFE swap: edit ONLY agents.defaults.model.primary in place, backup first.
 // Never regenerates from a template (that would clobber hand-tuned config).
-function setPrimary(ref: string): { ok: boolean; message: string } {
+async function setPrimary(ref: string): Promise<{ ok: boolean; message: string }> {
   const cfg = readCfg()
   const models = listBrains().models
   const target = models.find((m) => m.ref === ref)
@@ -50,11 +54,18 @@ function setPrimary(ref: string): { ok: boolean; message: string } {
   cfg.agents.defaults.model ??= {}
   cfg.agents.defaults.model.primary = ref
   writeFileSync(CFG, `${JSON.stringify(cfg, null, 2)}\n`)
+  const client = createChatClient({ system: createWindowsSystem(), deliverExternally: false })
+  client.on('error', () => {})
+  try {
+    await client.connect()
+    await client.selectModel(ref)
+  } catch {
+    return { ok: true, message: `Default set to ${target.id}. The current chat could not be updated; reconnect and select this brain again.` }
+  } finally { client.close() }
   return { ok: true, message: `Brain set to ${target.id} — restart the gateway to apply.` }
 }
 
-// Probe hosted models for liveness (Ollama models are local → 'local').
-// Sequential + spaced: ArliAI's free tier caps at 1 request in flight.
+// Read-only availability checks: diagnostics never consume a completion slot or credits.
 async function probeLiveness(): Promise<BrainLiveness> {
   const cfg = readCfg()
   const out: BrainLiveness = {}
@@ -73,17 +84,19 @@ async function probeLiveness(): Promise<BrainLiveness> {
         continue
       }
       try {
-        const r = await fetch(`${p.baseUrl}/chat/completions`, {
-          method: 'POST',
+        const r = await fetch(`${p.baseUrl}/models`, {
+          method: 'GET',
           headers: { Authorization: `Bearer ${p.apiKey}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ model: m.id, messages: [{ role: 'user', content: 'ping' }], max_tokens: 4 }),
           signal: AbortSignal.timeout(12000),
         })
-        out[ref] = r.ok ? 'up' : 'down'
+        if (!r.ok) out[ref] = 'unknown'
+        else {
+          const list = await r.json() as { data?: { id: string }[] }
+          out[ref] = list.data?.some(entry => entry.id === m.id) ? 'up' : 'unknown'
+        }
       } catch {
         out[ref] = 'down'
       }
-      await new Promise((res) => setTimeout(res, 900))
     }
   }
   return out

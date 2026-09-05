@@ -927,15 +927,21 @@
 }
 .chat-head {
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 0.8rem;
   padding: 1rem 1.4rem;
   border-bottom: 1px solid var(--edge);
 }
 .chat-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
   font: 600 1.12rem/1 var(--f-display);
 }
 .chat-conn {
+  flex-basis: 100%;
+  order: 1;
   font: 500 0.78rem/1 var(--f-ui);
   color: var(--ink-faint);
 }
@@ -1344,6 +1350,35 @@
   color: var(--ink-faint);
   opacity: 0.65;
   padding: 0 0.25rem;
+}
+
+.msg-delivery {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.msg-delivery.failed { color: var(--danger, #d96a6a); }
+.msg-delivery button {
+  margin-left: 6px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.bubble.streaming::after {
+  content: '▍';
+  display: inline-block;
+  margin-left: 2px;
+  animation: chat-caret 900ms steps(1, end) infinite;
+}
+
+@keyframes chat-caret {
+  50% { opacity: 0; }
 }
 .bubble {
   position: relative;
@@ -1822,6 +1857,7 @@
   font-weight: 600;
 }
 .chat-input input {
+  min-width: 0;
   flex: 1;
   background: var(--surface);
   border: 1px solid var(--edge);
@@ -3702,4 +3738,43 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-faint);
+}
+
+/* Remains outside the scrolling log so it is reachable while reading older turns. */
+.chat-jump {
+  align-self: center;
+  margin: 8px 0;
+  padding: 7px 14px;
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+
+@media (max-width: 1120px) {
+  .chat-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 158px;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  .chat-roster {
+    grid-column: 1 / -1;
+    width: auto;
+    min-width: 0;
+    flex-direction: row;
+    align-items: center;
+    border-right: 0;
+    border-bottom: 1px solid var(--edge);
+    padding: 8px 12px;
+    overflow: hidden;
+  }
+  .chat-roster-head { flex: none; padding-bottom: 0; }
+  .chat-roster-list { flex-direction: row; overflow-x: auto; min-width: 0; }
+  .chat-roster-item { flex: none; }
+  .chat { min-height: 0; grid-column: 1; }
+  .chat-controls { grid-column: 2; width: auto; min-height: 0; }
+  .chat-head { padding: 12px; gap: 8px; }
+  .chat-head > button { flex-shrink: 0; margin-left: 0; }
+  .chat-input { padding: 12px; }
 }

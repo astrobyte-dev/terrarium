@@ -8,19 +8,35 @@ pane. No stray cmd windows.
 
 Architecture: headless supervisor core (`@terrarium/core`, zero UI deps,
 Functional Core / Imperative Shell) consumed by an Ink TUI
-(`@terrarium/tui`); an Electron GUI lands later on the same core.
+(`@terrarium/tui`) and an Electron/React desktop app (`@terrarium/gui`).
 
 ## Dev quickstart
 
 ```
 npm install
-npm test              # core unit tests (Vitest)
-npm run typecheck
+npm test              # core + GUI regression tests (Vitest)
+npm run typecheck     # all three workspaces, including the GUI
+npm run check         # typecheck + tests + production GUI build
+npm run test:desktop  # isolated Electron interaction/security checks + screenshots
+npm run test:live     # real local chat/model/image/voice checks (creates test data)
+npm run gui           # Electron desktop app
+npm run gui:build     # production build without starting services
 npm run smoke         # one read-only pass against the live system, prints statuses
-npm run tui           # status board + unified log pane (read-only in M1); q quits
+npm run tui           # status board + unified log pane; q quits
 ```
 
 ## Status
+
+The desktop app includes a service dashboard, chat with streaming and a persistent
+outbox, a brain picker, character creation and editing, portraits/gallery, memory,
+voice notes, and diagnostics. Service ownership remains an explicit migrate/release
+action. The entries below are the historical core milestones, not the full GUI
+feature list.
+
+See [the project review](docs/project-review.md) for the latest code-review findings,
+the reliability improvements made in this pass, and remaining validation gaps.
+The [desktop validation guide](docs/desktop-validation.md) explains how to repeat
+the UI checks without connecting to your real bots or services.
 
 - **M0 scaffold** — done
 - **M1 detect & observe (read-only)** — done. `npm run smoke` / `npm run tui`

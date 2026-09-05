@@ -29,7 +29,7 @@ export function trafficLight(entry: CatalogEntry, hw: Hardware, opts: TrafficOpt
   if (entry.kind === 'hosted') {
     return { color: 'green', reason: 'runs remotely — needs internet and an API key, no hardware ceiling' }
   }
-  if (entry.reasoning) {
+  if (entry.reasoning && !entry.nonThinkingVerified) {
     return { color: 'red', reason: "reasoning model — breaks OpenClaw's pipe (thinking spam / empty replies)" }
   }
 

@@ -1,4 +1,5 @@
-import { app, ipcMain } from 'electron'
+import { trustedIpc as ipcMain } from './ipc'
+import { app } from 'electron'
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { GenSettings } from '../shared/contract'
@@ -11,6 +12,7 @@ const TERRARIUM_DIR = join(LOCALAPPDATA, 'Terrarium')
 const FILE = join(TERRARIUM_DIR, 'gen_settings.json')
 
 const DEFAULTS: GenSettings = {
+  preset: 'balanced',
   faceLock: true,
   feetFocus: false,
   explicitDefault: false,
@@ -28,12 +30,8 @@ function read(): GenSettings {
 }
 
 function write(s: GenSettings): void {
-  try {
-    mkdirSync(TERRARIUM_DIR, { recursive: true })
-    writeFileSync(FILE, JSON.stringify(s, null, 2))
-  } catch {
-    /* best effort — a failed write just means the daemon keeps the previous toggles */
-  }
+  mkdirSync(TERRARIUM_DIR, { recursive: true })
+  writeFileSync(FILE, JSON.stringify(s, null, 2))
 }
 
 export function setupGenSettings(): void {

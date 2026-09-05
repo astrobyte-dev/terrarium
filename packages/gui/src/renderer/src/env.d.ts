@@ -9,9 +9,13 @@ import type {
   BrainLiveness,
   BrainsList,
   CharGetResult,
+  CharActivateResult,
+  CharDeleteResult,
   CharRemoveResult,
   CharUpdateResult,
   ChatConnectResult,
+  ChatSendRequest,
+  ChatSendResult,
   ChatMsg,
   ChatStatus,
   CoreState,
@@ -52,8 +56,9 @@ declare global {
       }
       chat: {
         connect: () => Promise<ChatConnectResult>
-        send: (text: string) => Promise<{ ok: boolean; message?: string }>
+        send: (req: ChatSendRequest) => Promise<ChatSendResult>
         onMessage: (cb: (m: ChatMsg) => void) => () => void
+        onHistory: (cb: (m: ChatMsg[]) => void) => () => void
         onStatus: (cb: (s: ChatStatus) => void) => () => void
       }
       proactive: {
@@ -67,6 +72,7 @@ declare global {
       memory: {
         list: () => Promise<MemoryView>
         save: (memories: string[]) => Promise<{ ok: boolean; message?: string }>
+        saveCharacter: (character: string, memories: string[]) => Promise<{ ok: boolean; message?: string }>
       }
       voice: {
         catalog: () => Promise<VoiceCatalogView>
@@ -98,6 +104,8 @@ declare global {
       characters: {
         list: () => Promise<RosterView>
         remove: (heading: string) => Promise<CharRemoveResult>
+        activate: (slug: string) => Promise<CharActivateResult>
+        deletePermanently: (slug: string) => Promise<CharDeleteResult>
         get: (slug: string) => Promise<CharGetResult>
         update: (spec: BotSpecInput, originalSlug: string, originalHeading: string) => Promise<CharUpdateResult>
       }

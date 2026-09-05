@@ -5,7 +5,7 @@
  * disqualifying for OpenClaw — thinking models spam or return empty replies
  * through its plain pipe (proven repeatedly in production).
  */
-export type BrainProvider = 'ollama' | 'arliai' | 'anthropic'
+export type BrainProvider = 'ollama' | 'arliai' | 'anthropic' | 'venice'
 
 export interface CatalogEntry {
   id: string
@@ -17,11 +17,24 @@ export interface CatalogEntry {
   weightsMb: number | null // null for hosted
   kvMbPer1kCtx: number | null
   reasoning: boolean
+  /** Only set after non-thinking mode is verified end to end. */
+  nonThinkingVerified?: boolean
   refusalTier: 'uncensored' | 'lenient' | 'strict'
   notes: string
 }
 
 export const MODEL_CATALOG: CatalogEntry[] = [
+  {
+    id: 'huihui_ai/qwen3.5-abliterated:9b', label: 'Qwen 3.5 9B (non-thinking, local)', kind: 'local', provider: 'ollama',
+    configRef: 'ollama/huihui_ai/qwen3.5-abliterated:9b', weightsMb: 6500, kvMbPer1kCtx: 64,
+    reasoning: true, nonThinkingVerified: true, refusalTier: 'uncensored',
+    notes: 'Hugging Face Huihui candidate; tested with think:false on RTX 4070. Unload image models first. Cold starts are slower than Dolphin.',
+  },
+  ...['venice-uncensored-1-2', 'venice-uncensored-role-play', 'gemma-4-uncensored'].map((id): CatalogEntry => ({
+    id: `venice/${id}`, label: `${id} (Venice)`, kind: 'hosted', provider: 'venice', configRef: `venice/${id}`,
+    weightsMb: null, kvMbPer1kCtx: null, reasoning: false, refusalTier: 'uncensored',
+    notes: 'Hosted; uses Venice API credits and the configured spending cap. Benchmark before making primary.',
+  })),
   {
     id: 'dolphin3:8b',
     label: 'Dolphin 3 8B (local)',

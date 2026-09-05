@@ -57,7 +57,10 @@ export function App() {
               messages={chat.messages}
               status={chat.status}
               connected={chat.connected}
+              resetting={chat.resetting}
               send={chat.send}
+              retry={chat.retry}
+              newConversation={chat.newConversation}
             />
           ) : section === 'brains' ? (
             <BrainsScreen />

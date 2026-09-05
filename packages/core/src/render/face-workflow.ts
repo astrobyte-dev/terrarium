@@ -31,6 +31,8 @@ const ANIME_NEGATIVE =
   'child, kid, loli, shota, underage, aged down'
 
 export interface FaceWorkflowOptions {
+  preset?: 'preview' | 'balanced' | 'quality' | 'lightning'
+  detailers?: boolean
   prompt: string
   seed: number
   /** server-side name from ComfyUI /upload/image; enables the face lock */
@@ -40,6 +42,9 @@ export interface FaceWorkflowOptions {
 }
 
 export function buildFaceWorkflow(opts: FaceWorkflowOptions): ComfyWorkflow {
+  if (/\b(?:child(?:ren)?|underage|adolescent|preteen|teenager|loli|shota)\b|\b(?:[1-9]|1[0-7])[- ]*(?:years?[- ]*old|yo|y\/o)\b/i.test(opts.prompt)) {
+    throw new Error('Companion image generation requires adult subjects.')
+  }
   const anime = opts.anime ?? false
   const positive = anime
     ? ANIME_POSITIVE_PREFIX + opts.prompt
@@ -105,6 +110,24 @@ export function buildFaceWorkflow(opts: FaceWorkflowOptions): ComfyWorkflow {
   wf['22'] = { class_type: 'UltralyticsDetectorProvider', inputs: { model_name: 'bbox/hand_yolov8s.pt' } }
   wf['23'] = detailer(['21', 0], '22', ['1', 0], 0.4) // hands never go through the face lock
   wf['7'] = { class_type: 'SaveImage', inputs: { images: ['23', 0], filename_prefix: 'imagegen' } }
+  const preset = opts.preset ?? 'quality'
+  if (preset === 'balanced') {
+    delete wf['22']; delete wf['23']; wf['7']!.inputs.images = ['21', 0]
+  }
+  if (preset === 'preview' || opts.detailers === false || preset === 'lightning') {
+    for (const id of ['20', '21', '22', '23']) delete wf[id]
+    wf['7']!.inputs.images = ['6', 0]
+  }
+  if (preset === 'preview') {
+    Object.assign(wf['4']!.inputs, { width: 768, height: 1024 })
+    wf['5']!.inputs.steps = 18
+  }
+  if (preset === 'lightning') {
+    wf['1']!.inputs.ckpt_name = 'sdxl_lightning_4step.safetensors'
+    Object.assign(wf['5']!.inputs, { model: ['1', 0], steps: 4, cfg: 1, sampler_name: 'euler', scheduler: 'sgm_uniform' })
+    wf['2']!.inputs.text = `Photograph of an adult, ${opts.prompt}`
+    for (const id of ['10', '11', '12']) delete wf[id]
+  }
   return wf
 }
 
