@@ -19,6 +19,8 @@ export interface CreateBotOptions {
   /** Default true: report what would happen, write nothing. */
   dryRun?: boolean
   workspaceDir?: string
+  /** Store the full card in the character library; activation injects one compact card later. */
+  libraryOnly?: boolean
 }
 
 /**
@@ -45,6 +47,11 @@ export async function createBot(opts: CreateBotOptions): Promise<CreateBotResult
   const agentsMd = await system.readTextFile(agentsPath)
   const compact = renderCompactCard(spec)
   const plan = planInsert(agentsMd, compact)
+  if (opts.libraryOnly) {
+    if (dryRun) return { ok: true, errors: [], plan: { ...plan, fits: true }, fullCardPath, wrote: false, backupPath: null }
+    await system.writeTextFile(fullCardPath, renderFullCard(spec))
+    return { ok: true, errors: [], plan: { ...plan, fits: true }, fullCardPath, wrote: true, backupPath: null }
+  }
   if (!plan.fits) {
     return fail(
       [
@@ -93,6 +100,11 @@ export async function updateBot(opts: UpdateBotOptions): Promise<CreateBotResult
   if (errors.length > 0) return fail(errors)
 
   const agentsMd = await system.readTextFile(agentsPath)
+  if (opts.libraryOnly) {
+    if (dryRun) return { ok: true, errors: [], plan: planInsert(agentsMd, renderCompactCard(spec)), fullCardPath, wrote: false, backupPath: null }
+    await system.writeTextFile(fullCardPath, renderFullCard({ ...spec, slug: originalSlug }))
+    return { ok: true, errors: [], plan: planInsert(agentsMd, renderCompactCard(spec)), fullCardPath, wrote: true, backupPath: null }
+  }
   const without = removeCard(agentsMd, originalHeading)
   const compact = renderCompactCard(spec)
   const plan = planInsert(without, compact)

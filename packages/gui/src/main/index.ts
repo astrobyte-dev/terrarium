@@ -1,7 +1,10 @@
+import { configureIpcSecurity } from './ipc'
+import { rendererPreferences, secureWindow } from './window-security'
+import { trustedIpc as ipcMain } from './ipc'
 import { join } from 'node:path'
 import { appendFileSync, mkdirSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, Tray, Menu, ipcMain, nativeImage, net, protocol } from 'electron'
+import { app, BrowserWindow, Tray, Menu, nativeImage, net, protocol } from 'electron'
 import { setupCore } from './core'
 import { setupChat } from './chat'
 import { setupBrains } from './brains'
@@ -58,6 +61,10 @@ const iconPath = app.isPackaged
   ? join(process.resourcesPath, 'tray.png')
   : join(__dirname, '../../resources/tray.png')
 
+const rendererUrl = !app.isPackaged && process.env['ELECTRON_RENDERER_URL']
+  ? process.env['ELECTRON_RENDERER_URL']!
+  : pathToFileURL(join(__dirname, '../renderer/index.html')).href
+
 function createWindow(): void {
   win = new BrowserWindow({
     width: 1100,
@@ -69,9 +76,12 @@ function createWindow(): void {
     backgroundColor: '#0E1512', // Living Glass ground — no white flash on open
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
-      sandbox: false,
+      ...rendererPreferences,
     },
   })
+
+  secureWindow(win, rendererUrl)
+  configureIpcSecurity(() => win, rendererUrl)
 
   win.on('ready-to-show', () => win?.show())
 
@@ -84,9 +94,7 @@ function createWindow(): void {
     }
   })
 
-  const devUrl = process.env['ELECTRON_RENDERER_URL']
-  if (devUrl) void win.loadURL(devUrl)
-  else void win.loadFile(join(__dirname, '../renderer/index.html'))
+  void win.loadURL(rendererUrl)
 }
 
 function showWindow(): void {

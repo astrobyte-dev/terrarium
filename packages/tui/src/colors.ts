@@ -16,6 +16,7 @@ export const serviceColor: Record<ServiceId, string> = {
   ollama: 'green',
   comfyui: 'magenta',
   picDaemon: 'yellow',
+  inference: 'cyan',
 }
 
 export const levelColor: Record<LogLevel, string> = {

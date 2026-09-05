@@ -69,10 +69,15 @@ export function BrainsScreen() {
       <header className="brains-head">
         <h2>Brains</h2>
         <p>
-          Ella’s brain is <b>{list.current.split('/').pop() || '—'}</b>. Switching edits your config in place (a backup
-          is kept) and takes effect after a gateway restart. Reasoning models are blocked — they break OpenClaw.
+          Your current brain is <b>{list.current.split('/').pop() || '—'}</b>. Changes take effect after restarting
+          the gateway. Local models marked as unverified are unavailable until their chat compatibility is tested.
         </p>
       </header>
+      {list.veniceBudget && <div className="brains-note">
+        <span>Venice API allowance: US${Math.max(0, list.veniceBudget.limitUsd - list.veniceBudget.accountedUsd).toFixed(3)} remaining
+          {' '}of US${list.veniceBudget.limitUsd.toFixed(2)} total. Includes conservative reservations; this is not your Venice account balance.
+          {' '}At the limit, chat uses its fallback. Subscription credits may cover API use.</span>
+      </div>}
 
       {note && (
         <div className={`brains-note ${note.ok ? 'ok' : 'err'}`}>
@@ -86,7 +91,7 @@ export function BrainsScreen() {
       )}
 
       <section className="brain-group">
-        <h3>Hosted · ArliAI</h3>
+        <h3>Hosted · Venice / ArliAI</h3>
         {hosted.length === 0 ? <p className="brain-empty">none configured</p> : hosted.map(row)}
       </section>
       <section className="brain-group">

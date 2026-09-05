@@ -1,14 +1,14 @@
+import { trustedIpc as ipcMain } from './ipc'
 import { copyFileSync, existsSync, mkdirSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
-import { ipcMain } from 'electron'
-import { PHOTOREAL_CHECKPOINT, buildTxt2ImgWorkflow, renderImage, type RenderedImage } from '@terrarium/core'
+import { PHOTOREAL_CHECKPOINT, buildTxt2ImgWorkflow, renderImage, localEndpoint, type RenderedImage } from '@terrarium/core'
 import type { ArchetypeRegenResult, PortraitGenInput, PortraitGenResult, PortraitSaveResult } from '../shared/contract'
 
 // Candidate profile portraits for the Bot Builder, rendered on the same ComfyUI the
 // photo pipeline uses. The chosen one becomes the character's face reference
 // (characters/refs/<slug>.png) so future /pic shots lock to that face.
-const COMFY = 'http://127.0.0.1:8188'
+const COMFY = localEndpoint('comfy')
 const LOCALAPPDATA = process.env['LOCALAPPDATA'] || join(homedir(), 'AppData', 'Local')
 export const PORTRAITS_DIR = join(LOCALAPPDATA, 'Terrarium', 'portraits')
 const REFS_DIR = join(homedir(), '.openclaw', 'workspace', 'characters', 'refs')

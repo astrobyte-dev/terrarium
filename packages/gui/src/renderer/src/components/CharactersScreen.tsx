@@ -5,13 +5,13 @@ import { deriveSlug } from '../data/slug'
 import { GalleryModal } from './GalleryModal'
 import { VoicePicker } from './VoicePicker'
 
-// The shared AGENTS.md character roster. OpenClaw hard-truncates that file at ~12k
-// chars, so this view shows who's using the budget and lets you remove cards to make
-// room for new companions. Removal backs up AGENTS.md first and takes effect next turn.
+// The character library is unbounded. OpenClaw's ~12k AGENTS.md limit applies only
+// to the one compact card activated for the current shared chat.
 export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: string) => void }) {
   const [roster, setRoster] = useState<RosterView | null>(null)
   const [busy, setBusy] = useState(false)
   const [confirming, setConfirming] = useState<string | null>(null)
+  const [purgeConfirm, setPurgeConfirm] = useState<string | null>(null)
   const [note, setNote] = useState<{ ok: boolean; text: string } | null>(null)
   const [gallery, setGallery] = useState<{ slug: string; name: string } | null>(null)
   const [voiceCat, setVoiceCat] = useState<VoiceCatalogView | null>(null)
@@ -20,8 +20,9 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
     const c = window.terrarium?.characters
     if (!c) return
     setBusy(true)
-    setRoster(await c.list())
-    setBusy(false)
+    try { setRoster(await c.list()) }
+    catch (error) { setNote({ ok: false, text: error instanceof Error ? error.message : String(error) }) }
+    finally { setBusy(false) }
   }, [])
 
   useEffect(() => {
@@ -41,6 +42,14 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
     setNote({ ok: r.ok, text: r.message })
     if (r.ok && r.roster) setRoster(r.roster)
   }
+  const purge = async (slug: string) => {
+    setPurgeConfirm(null)
+    setBusy(true)
+    const r = await window.terrarium.characters.deletePermanently(slug)
+    setBusy(false)
+    setNote({ ok: r.ok, text: r.message })
+    if (r.roster) setRoster(r.roster)
+  }
 
   const usedPct = roster ? Math.min(100, Math.round((roster.totalChars / roster.limit) * 100)) : 0
   const nearFull = roster ? roster.headroom < 800 : false
@@ -51,8 +60,8 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
         <div>
           <h2>Characters</h2>
           <p>
-            Everyone in your shared <code>AGENTS.md</code>. OpenClaw truncates that file at {roster?.limit ?? 12000} chars,
-            so removing a card frees room for new companions in Bot Builder.
+            Your character library is stored separately. OpenClaw only loads the selected character into shared <code>AGENTS.md</code>,
+            so the prompt budget does not limit how many companions you can keep.
           </p>
         </div>
         <button className="bb-check" type="button" disabled={busy} onClick={() => void load()}>
@@ -63,7 +72,7 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
       {roster && (
         <div className={`chars-budget ${nearFull ? 'tight' : ''}`}>
           <div className="chars-budget-row">
-            <span>AGENTS.md budget</span>
+            <span>Active prompt budget</span>
             <span className="chars-budget-num">
               {roster.totalChars} / {roster.limit} chars · {Math.max(0, roster.headroom)} free
             </span>
@@ -95,14 +104,20 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
                   Cancel
                 </button>
               </div>
+            ) : purgeConfirm === c.heading ? (
+              <div className="chars-confirm">
+                <span>PERMANENTLY delete {c.name} and clear every shared chat/image log?</span>
+                <button className="chars-del" type="button" onClick={() => void purge((c.slug ?? deriveSlug(c.name)))}>Delete everything</button>
+                <button className="chars-cancel" type="button" onClick={() => setPurgeConfirm(null)}>Cancel</button>
+              </div>
             ) : (
               <span className="chars-actions">
-                {voiceCat?.ready && <VoicePicker slug={deriveSlug(c.name)} catalog={voiceCat} />}
+                {voiceCat?.ready && <VoicePicker slug={(c.slug ?? deriveSlug(c.name))} catalog={voiceCat} />}
                 <button
                   className="chars-edit"
                   type="button"
                   disabled={busy}
-                  onClick={() => setGallery({ slug: deriveSlug(c.name), name: c.name })}
+                  onClick={() => setGallery({ slug: (c.slug ?? deriveSlug(c.name)), name: c.name })}
                 >
                   Gallery
                 </button>
@@ -110,12 +125,15 @@ export function CharactersScreen({ onEdit }: { onEdit: (slug: string, heading: s
                   className="chars-edit"
                   type="button"
                   disabled={busy}
-                  onClick={() => onEdit(deriveSlug(c.name), c.heading)}
+                  onClick={() => onEdit((c.slug ?? deriveSlug(c.name)), c.heading)}
                 >
                   Edit
                 </button>
                 <button className="chars-remove" type="button" disabled={busy} onClick={() => setConfirming(c.heading)}>
                   Remove
+                </button>
+                <button className="chars-del" type="button" disabled={busy} onClick={() => setPurgeConfirm(c.heading)}>
+                  Delete permanently
                 </button>
               </span>
             )}

@@ -1,5 +1,7 @@
 import { ARLIAI_MODELS, DISABLED_PLUGINS, DISABLED_SKILLS, OLLAMA_MODELS } from './provider-models'
 import { applyUserTuning, type UserTuning } from './user-tuning'
+import { VENICE_BASE_URL, VENICE_MODELS } from '../inference/venice'
+import { INFERENCE_URL } from '../inference/settings'
 
 export type SecretsMode = 'env-refs' | 'inline'
 
@@ -10,6 +12,7 @@ export interface TemplateSecrets {
   gatewayAuthToken: string
   /** null when the Claude door hasn't been opened — the provider is omitted. */
   anthropicApiKey: string | null
+  veniceApiKey?: string | null
 }
 
 export interface TemplateCarryover {
@@ -20,6 +23,8 @@ export interface TemplateCarryover {
   fallbacks?: string[]
   /** The Claude door: emit the built-in anthropic provider (key captured). */
   anthropicEnabled?: boolean
+  veniceEnabled?: boolean
+  coordinated?: boolean
   /**
    * Hand-tuning lifted from the live config (extractUserTuning). Laid over the
    * fresh build last; the model domain is user-owned, so it beats the
@@ -77,7 +82,12 @@ export function buildOpenclawConfig(
     }
   }
 
-  return applyUserTuning({
+  if (carry.veniceEnabled) {
+    if (inline && !inline.veniceApiKey && !carry.coordinated) throw new Error('Venice enabled without its stored API key')
+    providers.venice = { baseUrl: VENICE_BASE_URL, api: 'openai-completions',
+      apiKey: inline ? inline.veniceApiKey : envRef('VENICE_API_KEY'), models: VENICE_MODELS, timeoutSeconds: 120 }
+  }
+  const result = applyUserTuning({
     meta: carry.meta ?? { lastTouchedVersion: '2026.6.11', lastTouchedAt: '2026-07-05T14:00:14.997Z' },
     commands: {
       native: 'auto',
@@ -130,4 +140,14 @@ export function buildOpenclawConfig(
       lastRunMode: 'local',
     },
   }, carry.tuning)
+  if (carry.coordinated) {
+    const configured = (result.models as { providers: Record<string, Record<string, unknown>> }).providers
+    for (const name of ['ollama', 'arliai', 'venice']) {
+      if (!configured[name]) continue
+      configured[name].baseUrl = `${INFERENCE_URL}/chat/${name}${name === 'ollama' ? '' : '/v1'}`
+      // Coordinator reads DPAPI itself, so no hosted credential needs to be in this config.
+      if (name !== 'ollama') configured[name].apiKey = 'terrarium-coordinator'
+    }
+  }
+  return result
 }

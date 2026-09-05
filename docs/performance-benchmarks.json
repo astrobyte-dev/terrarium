@@ -1,0 +1,340 @@
+{
+  "baseline": {
+    "date": "2026-09-05T13:49:42.879Z",
+    "results": [
+      {
+        "model": "dolphin3:8b",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 6290.4129,
+        "totalMs": 6817.957200000001,
+        "text": "Congratulations on getting your bike back on the road! It's great that you're enjoying it, even if it wobbled a bit at first – that's just part of the fun of riding something you've worked on yourself.",
+        "loadMs": 6190.5852,
+        "promptTokens": 68,
+        "outputTokens": 46,
+        "tokensPerSecond": 87.11098318000538,
+        "correctRecall": false
+      },
+      {
+        "model": "dolphin3:8b",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 196.21090000000004,
+        "totalMs": 794.1032000000005,
+        "text": "For a calm morning on Friday before your interview with Pip by your side, consider starting with a cup of soothing chamomile tea. Spend some quiet time engaging in a calming activity like reading or gentle stretching. This will help center you for the day ahead.",
+        "loadMs": 160.0615,
+        "promptTokens": 87,
+        "outputTokens": 53,
+        "tokensPerSecond": 88.62209365515972,
+        "correctRecall": true
+      }
+    ]
+  },
+  "local": {
+    "date": "2026-09-05T14:17:11.618Z",
+    "results": [
+      {
+        "model": "dolphin3:8b",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 3284.9459,
+        "totalMs": 3655.4545,
+        "text": "Congratulations on getting your bike back on the road! That must have been quite an adventure - hopefully, it's just the start of many more enjoyable rides.",
+        "loadMs": 2910.6412,
+        "promptTokens": 68,
+        "outputTokens": 32,
+        "tokensPerSecond": 85.57019162374786,
+        "correctRecall": false
+      },
+      {
+        "model": "dolphin3:8b",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 6730.8616,
+        "totalMs": 7368.394899999999,
+        "text": "For a calm morning on Friday before your interview with Pip by your side, consider starting with a light breakfast, then some gentle stretching or yoga to ease into the day. Make sure you have everything packed for your interview. Enjoy a calming cup of tea while you prepare.",
+        "loadMs": 2578.1439,
+        "promptTokens": 87,
+        "outputTokens": 55,
+        "tokensPerSecond": 86.17393974718132,
+        "correctRecall": true
+      },
+      {
+        "model": "huihui_ai/qwen3-abliterated:8b",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 5411.253500000001,
+        "totalMs": 5754.123000000001,
+        "text": "That's amazing—you've given your bike a second life! It's the little wobbles that make the ride feel like an adventure.",
+        "loadMs": 5070.1904,
+        "promptTokens": 76,
+        "outputTokens": 29,
+        "tokensPerSecond": 84.44494917287629,
+        "correctRecall": false
+      },
+      {
+        "model": "huihui_ai/qwen3-abliterated:8b",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 475.615600000001,
+        "totalMs": 784.4470000000001,
+        "text": "Interview moved to Friday. Have a calm morning: wake up slowly, brew tea, walk Pip, then prepare for the interview.",
+        "loadMs": 139.7149,
+        "promptTokens": 94,
+        "outputTokens": 27,
+        "tokensPerSecond": 87.33709206299915,
+        "correctRecall": true
+      },
+      {
+        "model": "huihui_ai/qwen3.5-abliterated:9b",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 20445.5551,
+        "totalMs": 20868.372100000004,
+        "text": "That wobble sounds like the perfect excuse for a celebratory ice cream later tonight. Well done on bringing that two-wheeled beast back to life!",
+        "loadMs": 7487.6319,
+        "promptTokens": 71,
+        "outputTokens": 32,
+        "tokensPerSecond": 75.51426393651138,
+        "correctRecall": false
+      },
+      {
+        "model": "huihui_ai/qwen3.5-abliterated:9b",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 625.5506999999998,
+        "totalMs": 781.2592000000004,
+        "text": "Enjoy a calm Friday morning with your dog, Pip.",
+        "loadMs": 255.0115,
+        "promptTokens": 90,
+        "outputTokens": 12,
+        "tokensPerSecond": 76.86099688712963,
+        "correctRecall": true
+      }
+    ]
+  },
+  "hosted": {
+    "date": "2026-09-05T13:52:11.340Z",
+    "results": [
+      {
+        "provider": "arliai",
+        "model": "Gemma-4-31B-it",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 6292.6064,
+        "totalMs": 7044.6885,
+        "text": "Congrats on getting it back on the road! Just be careful not to wobble your way into a hedge on your next trip.",
+        "correctRecall": false
+      },
+      {
+        "provider": "arliai",
+        "model": "Gemma-4-31B-it",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 1019.2758999999996,
+        "totalMs": 1359.2592999999988,
+        "text": "Wake up early, enjoy a cup of tea, and spend some quiet time with Pip before your interview on Friday.",
+        "correctRecall": true
+      },
+      {
+        "provider": "venice",
+        "model": "venice-uncensored-1-2",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 973.0746999999992,
+        "totalMs": 1224.8963000000003,
+        "text": "It sounds like you had a great time! That first wobbly ride is just the beginning of many enjoyable rides to come.",
+        "usage": {
+          "prompt_tokens": 60,
+          "completion_tokens": 27,
+          "total_tokens": 87,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": false
+      },
+      {
+        "provider": "venice",
+        "model": "venice-uncensored-1-2",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 645.1917999999987,
+        "totalMs": 987.1196999999993,
+        "text": "For your interview on Friday, start with a morning walk with Pip to destress. Then do light yoga or stretching at home. Have a quiet breakfast and enjoy your favorite tea while reviewing notes.",
+        "usage": {
+          "prompt_tokens": 73,
+          "completion_tokens": 40,
+          "total_tokens": 113,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": true
+      },
+      {
+        "provider": "venice",
+        "model": "venice-uncensored-role-play",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 687.1821999999993,
+        "totalMs": 1080.6607000000004,
+        "text": "That's awesome you got it running again! Just be careful on your first few rides until you get used to it.",
+        "usage": {
+          "prompt_tokens": 58,
+          "completion_tokens": 25,
+          "total_tokens": 83,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": false
+      },
+      {
+        "provider": "venice",
+        "model": "venice-uncensored-role-play",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 734.965400000001,
+        "totalMs": 850.1933000000008,
+        "text": "Pip, Friday, tea.",
+        "usage": {
+          "prompt_tokens": 71,
+          "completion_tokens": 8,
+          "total_tokens": 79,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": true
+      },
+      {
+        "provider": "venice",
+        "model": "gemma-4-uncensored",
+        "test": "voice",
+        "status": 200,
+        "firstTokenMs": 674.4553999999989,
+        "totalMs": 908.9862999999987,
+        "text": "Nothing beats the feeling of a job well done. Just make sure you don't wobble right into a hedge!",
+        "usage": {
+          "prompt_tokens": 83,
+          "completion_tokens": 24,
+          "total_tokens": 107,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": false
+      },
+      {
+        "provider": "venice",
+        "model": "gemma-4-uncensored",
+        "test": "recall",
+        "status": 200,
+        "firstTokenMs": 500.52170000000115,
+        "totalMs": 675.3513000000003,
+        "text": "Wake up with Pip, have some tea, and prepare for your Friday interview.",
+        "usage": {
+          "prompt_tokens": 100,
+          "completion_tokens": 17,
+          "total_tokens": 117,
+          "prompt_tokens_details": {
+            "cached_tokens": 0
+          }
+        },
+        "correctRecall": true
+      }
+    ]
+  },
+  "gateway": {
+    "date": "2026-09-05T22:14:17.205Z",
+    "turns": [
+      {
+        "ok": true,
+        "model": "gemma-4-uncensored",
+        "provider": "venice",
+        "turn": 0,
+        "connectMs": 27,
+        "firstReplyMs": 6171,
+        "totalMs": 7346,
+        "externalDelivery": false
+      },
+      {
+        "ok": true,
+        "model": "gemma-4-uncensored",
+        "provider": "venice",
+        "turn": 1,
+        "connectMs": 27,
+        "firstReplyMs": 5559,
+        "totalMs": 6686,
+        "externalDelivery": false
+      }
+    ]
+  },
+  "model-sources": {
+    "date": "2026-09-05T22:20:15.799Z",
+    "lightning": {
+      "revision": "c9a24f48e1c025556787b0c58dd67a091ece2e44",
+      "filename": "sdxl_lightning_4step.safetensors",
+      "sha256": "e0d996ee0013e79d9d3561f50fcafb9a17e3ff07b780358e3b66d67932c4d490"
+    },
+    "localChat": {
+      "model": "huihui_ai/qwen3.5-abliterated:9b",
+      "digest": "92a443adb124f5e805bbdee23fdb38fcd22a7bf00a1016b53f764e741369c600",
+      "size": 6594474755
+    }
+  },
+  "images": {
+    "date": "2026-09-05T14:38:30.815Z",
+    "results": [
+      {
+        "preset": "quality",
+        "seed": 42,
+        "nodeCacheCleared": true,
+        "ok": true,
+        "elapsedMs": 23363.2942,
+        "peakVramMiB": 9799,
+        "peakSystemRamMiB": 24780,
+        "path": "C:\\Users\\thr3e\\AppData\\Local\\Terrarium\\benchmarks\\images\\quality.png",
+        "promptId": "4f2188f7-249c-42b3-b6cb-a787c6e17c1f",
+        "message": "rendered 1 image(s)"
+      },
+      {
+        "preset": "balanced",
+        "seed": 42,
+        "nodeCacheCleared": true,
+        "ok": true,
+        "elapsedMs": 14957.448,
+        "peakVramMiB": 8039,
+        "peakSystemRamMiB": 24710,
+        "path": "C:\\Users\\thr3e\\AppData\\Local\\Terrarium\\benchmarks\\images\\balanced.png",
+        "promptId": "a20efb8c-9d7f-47d0-a66d-924c028606f8",
+        "message": "rendered 1 image(s)"
+      },
+      {
+        "preset": "preview",
+        "seed": 42,
+        "nodeCacheCleared": true,
+        "ok": true,
+        "elapsedMs": 8134.4635999999955,
+        "peakVramMiB": 7814,
+        "peakSystemRamMiB": 24750,
+        "path": "C:\\Users\\thr3e\\AppData\\Local\\Terrarium\\benchmarks\\images\\preview.png",
+        "promptId": "d731f082-0a07-4034-a125-1310d5331298",
+        "message": "rendered 1 image(s)"
+      },
+      {
+        "preset": "lightning",
+        "seed": 42,
+        "nodeCacheCleared": true,
+        "ok": true,
+        "elapsedMs": 4637.133900000001,
+        "peakVramMiB": 7750,
+        "peakSystemRamMiB": 24666,
+        "path": "C:\\Users\\thr3e\\AppData\\Local\\Terrarium\\benchmarks\\images\\lightning.png",
+        "promptId": "974a6b07-bba9-4008-a118-77685c61def2",
+        "message": "rendered 1 image(s)"
+      }
+    ]
+  }
+}

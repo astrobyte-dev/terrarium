@@ -69,6 +69,21 @@ export function serviceDefinitions(
 
   return [
     {
+      id: 'inference', name: 'Inference Coordinator', port: 18790, startTier: 0.5,
+      strayPolicy: 'adopt', readyTimeoutMs: 30_000, quietAfterMs: null, wedgedAfterMs: null,
+      detectInstall: async (sys) => {
+        const path = `${localAppData}\\Terrarium\\runtime\\inference-server.cjs`
+        return await sys.fileExists(path) ? { path, version: '1', mode: 'managed' } : null
+      },
+      matchProcess: p => p.commandLine.includes('inference-server.cjs'),
+      spawn: async sys => {
+        const script = `${localAppData}\\Terrarium\\runtime\\inference-server.cjs`
+        if (!await sys.fileExists(script)) return null
+        return { command: process.execPath, args: [script], env: { ELECTRON_RUN_AS_NODE: '1' } }
+      },
+      resolveLogFile: null, parseLine: parsePlainLine,
+    },
+    {
       id: 'gateway',
       name: 'OpenClaw Gateway',
       port: 18789,
@@ -109,6 +124,7 @@ export function serviceDefinitions(
               ARLIAI_API_KEY: 'arliai-api-key',
               OLLAMA_API_KEY: 'ollama-api-key',
               ANTHROPIC_API_KEY: 'anthropic-api-key', // absent from the store → omitted
+              VENICE_API_KEY: 'venice-api-key',
             })),
           },
         }
@@ -137,7 +153,11 @@ export function serviceDefinitions(
       spawn: async (sys) => {
         const exe = `${localAppData}\\Programs\\Ollama\\ollama.exe`
         if (!(await sys.fileExists(exe))) return null
-        return { command: exe, args: ['serve'] }
+        let tuned = false
+        try { tuned = JSON.parse(await sys.readTextFile(`${localAppData}\\Terrarium\\performance.json`)).enabled === true } catch { /* default profile */ }
+        return { command: exe, args: ['serve'], ...(tuned ? { env: {
+          OLLAMA_FLASH_ATTENTION: '1', OLLAMA_KV_CACHE_TYPE: 'q8_0', OLLAMA_NUM_PARALLEL: '1', OLLAMA_MAX_LOADED_MODELS: '1',
+        } } : {}) }
       },
       resolveLogFile: async () => `${localAppData}\\Ollama\\server.log`,
       parseLine: parsePlainLine,
@@ -164,13 +184,17 @@ export function serviceDefinitions(
         p.commandLine.includes('main.py') &&
         p.commandLine.includes('8188'),
       spawn: async (sys) => {
+        let tuned = false
+        try { tuned = JSON.parse(await sys.readTextFile(`${localAppData}\\Terrarium\\performance.json`)).enabled === true } catch { /* opt in */ }
         if (await sys.fileExists(MANAGED_COMFY_MAIN)) {
-          return managedComfySpawn(MANAGED_COMFY_DIR, 8188)
+          const spec = managedComfySpawn(MANAGED_COMFY_DIR, 8188)
+          if (tuned) { spec.args[spec.args.indexOf('--reserve-vram') + 1] = '1.5'; spec.args.push('--cache-ram', '6') }
+          return spec
         }
         if (!(await sys.fileExists(`${COMFY_DIR}\\main.py`))) return null
         return {
           command: PYTHON,
-          args: ['main.py', '--listen', '127.0.0.1', '--port', '8188', '--reserve-vram', '1.0'],
+          args: ['main.py', '--listen', '127.0.0.1', '--port', '8188', '--reserve-vram', tuned ? '1.5' : '1.0', ...(tuned ? ['--cache-ram', '6'] : [])],
           cwd: COMFY_DIR,
           env: { PYTHONUTF8: '1', PYTHONUNBUFFERED: '1' },
         }

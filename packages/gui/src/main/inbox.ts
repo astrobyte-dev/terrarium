@@ -1,6 +1,7 @@
+import { trustedIpc as ipcMain } from './ipc'
 import { join } from 'node:path'
 import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
-import { app, BrowserWindow, ipcMain } from 'electron'
+import { app, BrowserWindow } from 'electron'
 import type { ChatMsg, GalleryEntry } from '../shared/contract'
 
 // The pic daemon mirrors every delivered photo here: PNG(s) + a <uuid>.json manifest.
@@ -24,6 +25,7 @@ const KEEP_GALLERY = 240 // gallery entries kept per install (all characters, mo
 const KEEP_IMAGES = 300 // hard cap on PNGs kept in the inbox (gallery-referenced spared)
 
 interface Manifest {
+  id?: string
   images: string[]
   caption: string
   character: string
@@ -35,6 +37,7 @@ interface Manifest {
 }
 
 const toChatMsg = (m: Manifest): ChatMsg => ({
+  id: m.id ? `image-${m.id}` : `image-${m.ts}-${m.images.join('|')}`,
   role: 'assistant',
   text: m.caption ?? '',
   ts: m.ts,
@@ -45,7 +48,10 @@ const toChatMsg = (m: Manifest): ChatMsg => ({
 
 function readHistory(): ChatMsg[] {
   try {
-    return JSON.parse(readFileSync(HISTORY_FILE, 'utf8')) as ChatMsg[]
+    return (JSON.parse(readFileSync(HISTORY_FILE, 'utf8')) as ChatMsg[]).map((m, i) => ({
+      ...m,
+      id: m.id || `image-history-${m.ts ?? 0}-${i}`,
+    }))
   } catch {
     return []
   }
@@ -122,10 +128,13 @@ export function setupInbox(getWin: () => BrowserWindow | null): void {
       try {
         const manifest = JSON.parse(readFileSync(path, 'utf8')) as Manifest
         const msg = toChatMsg(manifest)
-        history.push(msg)
+        const existing = history.findIndex(item => item.id === msg.id)
+        if (existing >= 0) history[existing] = msg
+        else history.push(msg)
         history = history.slice(-KEEP_HISTORY)
         // One gallery entry per image, tagged with the character the chat log discards.
         for (const name of manifest.images) {
+          gallery = gallery.filter(entry => entry.image !== `terrarium://inbox/${name}`)
           gallery.push({
             character: manifest.character ?? '',
             image: `terrarium://inbox/${name}`,

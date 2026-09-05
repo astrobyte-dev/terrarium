@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron'
+import { trustedIpc as ipcMain } from './ipc'
 import { homedir } from 'node:os'
 import { execFile } from 'node:child_process'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
@@ -59,7 +59,7 @@ function render(text: string, voice: string): Promise<VoiceSay> {
   const txt = join(OUT, `${id}.txt`)
   writeFileSync(txt, clean, 'utf8')
   return new Promise((resolve) => {
-    execFile(PY, [SCRIPT, '--textfile', txt, '--voice', voice, '--out', wav], { timeout: 60_000 }, (err, _out, stderr) => {
+    execFile(PY, [SCRIPT, '--textfile', txt, '--voice', voice, '--out', wav], { timeout: 60_000, windowsHide: true }, (err, _out, stderr) => {
       if (err || !existsSync(wav)) {
         resolve({ ok: false, message: (stderr || '').trim().split('\n').pop() || 'voice render failed' })
       } else {

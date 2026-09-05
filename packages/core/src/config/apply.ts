@@ -37,7 +37,11 @@ export async function applyConfig(opts: ApplyOptions): Promise<ApplyResult> {
 
   const live = JSON.parse(await system.readTextFile(configPath)) as Record<string, unknown>
   const anthropicKey = await opts.store.get(SECRET_NAMES.anthropicApiKey) // optional (the Claude door)
+  const veniceKey = await opts.store.get(SECRET_NAMES.veniceApiKey)
+  let coordinated = false
+  try { coordinated = JSON.parse(await system.readTextFile(`${system.env('LOCALAPPDATA')}\\Terrarium\\performance.json`)).enabled === true } catch { /* opt in */ }
   const secrets = opts.mode === 'inline' ? await requireSecrets(opts.store, anthropicKey) : null
+  if (secrets) secrets.veniceApiKey = veniceKey
   const brain = await readBrainSelection(system) // persisted brain choice survives regen
   const target = buildOpenclawConfig(opts.mode, secrets, {
     meta: live.meta,
@@ -45,6 +49,8 @@ export async function applyConfig(opts: ApplyOptions): Promise<ApplyResult> {
     primaryModel: brain?.primaryModel,
     fallbacks: brain?.fallbacks,
     anthropicEnabled: anthropicKey !== null,
+    veniceEnabled: veniceKey !== null,
+    coordinated,
     tuning: extractUserTuning(live), // live hand-tuning wins over the brain store
   })
 
